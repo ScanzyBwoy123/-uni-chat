@@ -859,10 +859,7 @@ function showMessageActionMenu(message, x, y) {
   document.body.appendChild(menu);
   messageActionMenu = menu;
 }
-// ---------------- SEND MESSAGE ----------------
-
-composer.addEventListener("submit", async event => {
-  // ---------------- IMAGE AND VIDEO UPLOAD ----------------
+ // ---------------- IMAGE AND VIDEO UPLOAD ----------------
 
 mediaInput.addEventListener("change", async () => {
   const file = mediaInput.files[0];
@@ -942,6 +939,11 @@ mediaInput.addEventListener("change", async () => {
     setComposerEnabled(!!currentConversation);
   }
 });
+
+
+// ---------------- SEND MESSAGE ----------------
+
+composer.addEventListener("submit", async event => {
   event.preventDefault();
 
   if (!currentUser || !currentConversation) return;
@@ -953,15 +955,15 @@ mediaInput.addEventListener("change", async () => {
 
   const { data, error } = await db
     .from("messages")
- .insert({
-  conversation_id: currentConversation,
-  sender_id: currentUser.id,
-  body,
-  message_type: "text",
-  reply_to_message_id: replyingToMessage
-    ? replyingToMessage.id
-    : null
-})
+    .insert({
+      conversation_id: currentConversation,
+      sender_id: currentUser.id,
+      body,
+      message_type: "text",
+      reply_to_message_id: replyingToMessage
+        ? replyingToMessage.id
+        : null
+    })
     .select()
     .single();
 
@@ -973,12 +975,11 @@ mediaInput.addEventListener("change", async () => {
     return;
   }
 
-    messageInput.value = "";
+  messageInput.value = "";
   clearReply();
   displayMessage(data);
   messageInput.focus();
 });
-
 // ---------------- REALTIME ----------------
 
 function subscribeToMessages() {
