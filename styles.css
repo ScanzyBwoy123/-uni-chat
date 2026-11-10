@@ -185,3 +185,91 @@ button:disabled {
     max-width: 88%;
   }
 }
+/* Public registration form additions */
+
+:root {
+  --auth-width: 390px;
+  --auth-text: #e8dfea;
+  --auth-text-muted: #d8cddd;
+  --auth-text-hint: #aaa4bd;
+  --auth-text-dark: #28162b;
+  --auth-surface: #ffffff0d;
+  --auth-border: #ffffff26;
+  --auth-accent: #e65b9a;
+  --auth-gradient: linear-gradient(100deg, #ff78ad, #c77bdb);
+  --auth-success: #a8efc2;
+  --auth-danger: #ff8295;
+}
+
+/* Login / sign-up toggle */
+.auth-switch {
+  display: flex;
+  gap: 8px;
+  width: 100%;
+  max-width: var(--auth-width);
+  margin: 12px 0 18px;
+  padding: 5px;
+  border-radius: 14px;
+  background: var(--auth-surface);
+}
+
+.auth-tab {
+  flex: 1;
+  padding: 11px 8px;
+  border: 0;
+  border-radius: 10px;
+  background: transparent;
+  color: var(--auth-text-muted);
+  font-weight: 700;
+}
+
+.auth-tab.active {
+  background: var(--auth-gradient);
+  color: var(--auth-text-dark);
+}
+
+/* Forms */
+#signupForm {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  width: 100%;
+  max-width: var(--auth-width);
+  text-align: left;
+}
+
+#signupForm label,
+#loginForm label {
+  color: var(--auth-text);
+  font-size: 13px;
+  text-align: left;
+}
+
+#signupForm input {
+  width: 100%;
+  padding: 14px;
+  border: 1px solid var(--auth-border);
+  border-radius: 12px;
+  background: var(--auth-surface);
+  color: #fff;
+  font-size: 16px;
+}
+
+#signupForm input:focus {
+  outline: 2px solid var(--auth-accent);
+}
+
+.field-help {
+  margin-top: -7px;
+  color: var(--auth-text-hint);
+  font-size: 11px;
+}
+
+/* Status messages */
+#authMessage,
+#authError {
+  line-height: 1.5;
+}
+
+#authMessage { color: var(--auth-success); }
+#authError   { color: var(--auth-danger); }
