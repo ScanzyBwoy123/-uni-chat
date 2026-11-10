@@ -862,6 +862,86 @@ function showMessageActionMenu(message, x, y) {
 // ---------------- SEND MESSAGE ----------------
 
 composer.addEventListener("submit", async event => {
+  // ---------------- IMAGE AND VIDEO UPLOAD ----------------
+
+mediaInput.addEventListener("change", async () => {
+  const file = mediaInput.files[0];
+
+  if (!file || !currentUser || !currentConversation) {
+    mediaInput.value = "";
+    return;
+  }
+
+  const isImage = file.type.startsWith("image/");
+  const isVideo = file.type.startsWith("video/");
+
+  if (!isImage && !isVideo) {
+    alert("Please select an image or video.");
+    mediaInput.value = "";
+    return;
+  }
+
+  if (file.size > 50 * 1024 * 1024) {
+    alert("The maximum file size is 50 MB.");
+    mediaInput.value = "";
+    return;
+  }
+
+  setComposerEnabled(false);
+  attachBtn.textContent = "…";
+
+  let uploadedPath = null;
+
+  try {
+    const extension = file.name.split(".").pop().toLowerCase();
+
+    const filePath =
+      `${currentConversation}/${currentUser.id}/${crypto.randomUUID()}.${extension}`;
+
+    const { error: uploadError } = await db.storage
+      .from("chat-media")
+      .upload(filePath, file, {
+        contentType: file.type,
+        upsert: false
+      });
+
+    if (uploadError) throw uploadError;
+
+    uploadedPath = filePath;
+
+    const { data, error } = await db
+      .from("messages")
+      .insert({
+        conversation_id: currentConversation,
+        sender_id: currentUser.id,
+        message_type: isImage ? "image" : "video",
+        body: null,
+        attachment_path: filePath
+      })
+      .select()
+      .single();
+
+    if (error) throw error;
+
+    displayMessage(data);
+
+    alert("Media sent successfully! 💗");
+
+  } catch (error) {
+    console.error("Media upload error:", error);
+
+    if (uploadedPath) {
+      await db.storage.from("chat-media").remove([uploadedPath]);
+    }
+
+    alert("Upload failed: " + error.message);
+
+  } finally {
+    mediaInput.value = "";
+    attachBtn.textContent = "＋";
+    setComposerEnabled(!!currentConversation);
+  }
+});
   event.preventDefault();
 
   if (!currentUser || !currentConversation) return;
