@@ -151,6 +151,23 @@
   <button id="cancelReplyBtn" type="button" aria-label="Cancel reply">✕</button>
 </div>
         <form id="composer" class="composer">
+          <button
+  type="button"
+  id="attachBtn"
+  class="attach-btn"
+  aria-label="Attach picture or video"
+  disabled
+>
+  ＋
+</button>
+
+<input
+  type="file"
+  id="mediaInput"
+  accept="image/*,video/*"
+  hidden
+  disabled
+>
           <input
             id="messageInput"
             type="text"
