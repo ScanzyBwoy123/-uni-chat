@@ -230,7 +230,12 @@ async function initializeChat(user) {
   currentUser = user;
   currentConversation = null;
 
-  setComposerEnabled(false);
+    setComposerEnabled(false);
+
+  // Hide login and registration after successful sign-in
+  authView.classList.add("hidden");
+
+  // Display the main application
   appView.classList.remove("hidden");
   showDirectory();
 
