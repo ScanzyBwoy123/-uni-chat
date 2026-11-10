@@ -47,6 +47,8 @@ const messagesContainer = document.getElementById("messages");
 const messageInput = document.getElementById("messageInput");
 const sendBtn = document.getElementById("sendBtn");
 const composer = document.getElementById("composer");
+const attachBtn = document.getElementById("attachBtn");
+const mediaInput = document.getElementById("mediaInput");
 const partnerName = document.getElementById("partnerName");
 const connectionStatus = document.getElementById("connectionStatus");
 const logoutBtn = document.getElementById("logoutBtn");
@@ -131,7 +133,13 @@ function showSystemMessage(message) {
 function setComposerEnabled(enabled) {
   messageInput.disabled = !enabled;
   sendBtn.disabled = !enabled;
+  attachBtn.disabled = !enabled;
+  mediaInput.disabled = !enabled;
 }
+attachBtn.addEventListener("click", () => {
+  if (!currentUser || !currentConversation) return;
+  mediaInput.click();
+});
 // ---------------- REPLY PREVIEW ----------------
 
 function setReplyToMessage(message) {
