@@ -574,6 +574,8 @@ function displayMessage(message) {
     ? "message sent"
     : "message received";
 
+  element.dataset.messageId = message.id;
+
   const body = document.createElement("div");
   body.className = "message-text";
   body.textContent = message.body || "";
@@ -589,9 +591,115 @@ function displayMessage(message) {
   element.appendChild(time);
   messagesContainer.appendChild(element);
 
+  let pressTimer = null;
+  let pressStartX = 0;
+  let pressStartY = 0;
+
+  element.addEventListener("pointerdown", event => {
+    if (event.button !== 0) return;
+
+    pressStartX = event.clientX;
+    pressStartY = event.clientY;
+
+    clearTimeout(pressTimer);
+
+    pressTimer = setTimeout(() => {
+      showMessageActionMenu(
+        message,
+        pressStartX,
+        pressStartY
+      );
+    }, 550);
+  });
+
+  element.addEventListener("pointermove", event => {
+    const moved = Math.abs(event.clientX - pressStartX) +
+      Math.abs(event.clientY - pressStartY);
+
+    if (moved > 12) {
+      clearTimeout(pressTimer);
+    }
+  });
+
+  element.addEventListener("pointerup", () => {
+    clearTimeout(pressTimer);
+  });
+
+  element.addEventListener("pointercancel", () => {
+    clearTimeout(pressTimer);
+  });
+
+  element.addEventListener("contextmenu", event => {
+    event.preventDefault();
+
+    showMessageActionMenu(
+      message,
+      event.clientX,
+      event.clientY
+    );
+  });
+
   scrollToBottom();
 }
 
+function closeMessageActionMenu() {
+  if (messageActionMenu) {
+    messageActionMenu.remove();
+    messageActionMenu = null;
+  }
+}
+
+function showMessageActionMenu(message, x, y) {
+  closeMessageActionMenu();
+
+  const menu = document.createElement("div");
+
+  menu.style.position = "fixed";
+  menu.style.left = Math.min(x, window.innerWidth - 180) + "px";
+  menu.style.top = Math.min(y, window.innerHeight - 180) + "px";
+  menu.style.zIndex = "9999";
+  menu.style.background = "#24152f";
+  menu.style.color = "white";
+  menu.style.padding = "8px";
+  menu.style.borderRadius = "12px";
+  menu.style.boxShadow = "0 4px 18px rgba(0,0,0,0.35)";
+  menu.style.minWidth = "150px";
+
+  const actions = message.sender_id === currentUser.id
+    ? [
+        ["✏️ Edit message", "edit"],
+        ["🗑️ Delete for me", "delete_me"],
+        ["❌ Delete for everyone", "delete_everyone"]
+      ]
+    : [
+        ["🗑️ Delete for me", "delete_me"]
+      ];
+
+  actions.forEach(([label, action]) => {
+    const button = document.createElement("button");
+
+    button.type = "button";
+    button.textContent = label;
+    button.style.display = "block";
+    button.style.width = "100%";
+    button.style.padding = "11px";
+    button.style.border = "none";
+    button.style.background = "transparent";
+    button.style.color = "white";
+    button.style.textAlign = "left";
+    button.style.fontSize = "14px";
+
+    button.addEventListener("click", () => {
+      closeMessageActionMenu();
+      handleMessageAction(action, message);
+    });
+
+    menu.appendChild(button);
+  });
+
+  document.body.appendChild(menu);
+  messageActionMenu = menu;
+}
 // ---------------- SEND MESSAGE ----------------
 
 composer.addEventListener("submit", async event => {
