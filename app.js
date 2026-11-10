@@ -177,8 +177,8 @@ async function initializeChat(user) {
 
     return;
   }
-
-  currentConversation = membership.conversation_id;
+messageInput.disabled = false;
+document.getElementById("sendBtn").disabled = false;
 
   await loadPartnerName();
   await loadMessages();
