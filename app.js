@@ -710,28 +710,28 @@ function displayMessage(message) {
 
   messagesContainer.appendChild(element);
 
-    let pressTimer = null;
-  let pressStartX = 0;
-  let pressStartY = 0;
+  let pressTimer = null;
+  let startX = 0;
+  let startY = 0;
   let replyTriggered = false;
 
   element.addEventListener("pointerdown", event => {
     if (event.button !== 0) return;
 
-    pressStartX = event.clientX;
-    pressStartY = event.clientY;
+    startX = event.clientX;
+    startY = event.clientY;
     replyTriggered = false;
 
     clearTimeout(pressTimer);
 
     pressTimer = setTimeout(() => {
-      showMessageActionMenu(message, pressStartX, pressStartY);
+      showMessageActionMenu(message, startX, startY);
     }, 550);
   });
 
   element.addEventListener("pointermove", event => {
-    const deltaX = event.clientX - pressStartX;
-    const deltaY = event.clientY - pressStartY;
+    const deltaX = event.clientX - startX;
+    const deltaY = event.clientY - startY;
 
     if (
       event.pointerType === "touch" &&
@@ -757,34 +757,8 @@ function displayMessage(message) {
   element.addEventListener("pointercancel", () => {
     clearTimeout(pressTimer);
   });
-  element.addEventListener("pointerdown", event => {
-    if (event.button !== 0) return;
 
-    pressStartX = event.clientX;
-    pressStartY = event.clientY;
-
-    clearTimeout(pressTimer);
-
-    pressTimer = setTimeout(() => {
-      showMessageActionMenu(message, pressStartX, pressStartY);
-    }, 550);
-  });
-
-  element.addEventListener("pointermove", event => {
-    const moved = Math.abs(event.clientX - pressStartX) +
-      Math.abs(event.clientY - pressStartY);
-
-    if (moved > 12) clearTimeout(pressTimer);
-  });
-
-  element.addEventListener("pointerup", () => {
-    clearTimeout(pressTimer);
-  });
-
-  element.addEventListener("pointercancel", () => {
-    clearTimeout(pressTimer);
-  });
-
+  element.addEventListener("contextmenu", event => {
     event.preventDefault();
     showMessageActionMenu(message, event.clientX, event.clientY);
   });
