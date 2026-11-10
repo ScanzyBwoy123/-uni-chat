@@ -132,7 +132,26 @@ function setComposerEnabled(enabled) {
   messageInput.disabled = !enabled;
   sendBtn.disabled = !enabled;
 }
+// ---------------- REPLY PREVIEW ----------------
 
+function setReplyToMessage(message) {
+  if (!message || !currentConversation) return;
+
+  replyingToMessage = message;
+
+  replyPreviewText.textContent = message.body || "Message";
+  replyPreview.classList.remove("hidden");
+
+  messageInput.focus();
+}
+
+function clearReply() {
+  replyingToMessage = null;
+  replyPreview.classList.add("hidden");
+  replyPreviewText.textContent = "";
+}
+
+cancelReplyBtn.addEventListener("click", clearReply);
 // ---------------- AUTHENTICATION ----------------
 
 showLoginBtn.addEventListener("click", showLoginMode);
