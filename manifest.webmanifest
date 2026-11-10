@@ -1,0 +1,10 @@
+{
+  "name": "u n i chat",
+  "short_name": "u n i chat",
+  "description": "A private messaging space for two.",
+  "start_url": "./",
+  "display": "standalone",
+  "background_color": "#100d1e",
+  "theme_color": "#17132b",
+  "icons": []
+}
