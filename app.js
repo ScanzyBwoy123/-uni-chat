@@ -606,10 +606,10 @@ composer.addEventListener("submit", async event => {
     return;
   }
 
-  messageInput.value = "";
+    messageInput.value = "";
   displayMessage(data);
   messageInput.focus();
-}
+});
 
 // ---------------- REALTIME ----------------
 
