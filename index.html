@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#17132b">
+  <meta name="description" content="u n i chat — connect and message privately.">
+  <title>u n i chat 💗</title>
+  <link rel="manifest" href="manifest.webmanifest">
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <main class="shell">
+    <header class="topbar">
+      <div class="brand">
+        <span class="logo">♡</span>
+        <div>
+          <strong>u n i chat</strong>
+          <small>your people, your conversations</small>
+        </div>
+      </div>
+      <span class="secure">PRIVATE MESSAGES 🔒</span>
+    </header>
+
+    <section id="authView" class="welcome">
+      <div class="heart">♡</div>
+      <p class="eyebrow">WELCOME TO U N I CHAT</p>
+      <h1>Stay close,<br>wherever you are.</h1>
+      <p class="intro">Create an account or sign in to start connecting.</p>
+
+      <div class="auth-switch">
+        <button id="showLoginBtn" class="auth-tab active" type="button">Sign in</button>
+        <button id="showSignupBtn" class="auth-tab" type="button">Create account</button>
+      </div>
+
+      <form id="loginForm" class="login-form">
+        <label for="email">Email address</label>
+        <input id="email" type="email" placeholder="you@example.com" autocomplete="email" required>
+        <label for="password">Password</label>
+        <input id="password" type="password" placeholder="Your password" autocomplete="current-password" required>
+        <button id="loginBtn" class="primary" type="submit">Sign in 💗</button>
+      </form>
+
+      <form id="signupForm" class="login-form hidden">
+        <label for="displayName">Your name</label>
+        <input id="displayName" type="text" maxlength="40" placeholder="How should people know you?" autocomplete="name" required>
+        <label for="username">Username</label>
+        <input id="username" type="text" minlength="3" maxlength="20" placeholder="e.g. ama_ghana" autocomplete="username" required>
+        <small class="field-help">3–20 characters. Use letters, numbers or underscores.</small>
+        <label for="signupEmail">Email address</label>
+        <input id="signupEmail" type="email" placeholder="you@example.com" autocomplete="email" required>
+        <label for="signupPassword">Create password</label>
+        <input id="signupPassword" type="password" minlength="8" placeholder="At least 8 characters" autocomplete="new-password" required>
+        <button id="signupBtn" class="primary" type="submit">Create my account ✨</button>
+      </form>
+
+      <p id="authMessage" class="tiny" role="status" aria-live="polite"></p>
+      <p id="authError" class="tiny" role="alert"></p>
+      <div class="notice">🔐 Your account is protected by email authentication. Only people signed in to their own accounts can use the app.</div>
+    </section>
+
+    <section id="appView" class="chat hidden">
+      <div class="chat-head">
+        <div class="avatar">♡</div>
+        <div class="person">
+          <strong id="partnerName">u n i chat</strong>
+          <small id="connectionStatus">Getting your account ready...</small>
+        </div>
+        <button id="logoutBtn" class="icon-btn" type="button" aria-label="Sign out">↪</button>
+      </div>
+
+      <div id="messages" class="messages">
+        <p class="preview-note">Loading...</p>
+      </div>
+
+      <form id="composer" class="composer">
+        <input id="messageInput" type="text" placeholder="Write a message..." autocomplete="off" maxlength="4000" disabled>
+        <button id="sendBtn" class="send" type="submit" disabled>➤</button>
+      </form>
+    </section>
+
+    <footer>Made with ♡ · u n i chat</footer>
+  </main>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="app.js"></script>
+</body>
+</html>
