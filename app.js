@@ -649,13 +649,13 @@ async function loadMessages() {
   visibleMessages.forEach(displayMessage);
   scrollToBottom();
 }
-
 function displayMessage(message) {
   if (!message || loadedMessageIds.has(message.id)) return;
 
   loadedMessageIds.add(message.id);
 
   const element = document.createElement("div");
+
   element.className = message.sender_id === currentUser.id
     ? "message sent"
     : "message received";
@@ -673,12 +673,16 @@ function displayMessage(message) {
     minute: "2-digit"
   });
 
+  element.appendChild(body);
+  element.appendChild(time);
+
   if (message.edited_at) {
-  const edited = document.createElement("small");
-  edited.className = "message-edited";
-  edited.textContent = "Edited";
-  element.appendChild(edited);
-}
+    const edited = document.createElement("small");
+    edited.className = "message-edited";
+    edited.textContent = "Edited";
+    element.appendChild(edited);
+  }
+
   messagesContainer.appendChild(element);
 
   let pressTimer = null;
@@ -694,11 +698,7 @@ function displayMessage(message) {
     clearTimeout(pressTimer);
 
     pressTimer = setTimeout(() => {
-      showMessageActionMenu(
-        message,
-        pressStartX,
-        pressStartY
-      );
+      showMessageActionMenu(message, pressStartX, pressStartY);
     }, 550);
   });
 
@@ -706,9 +706,7 @@ function displayMessage(message) {
     const moved = Math.abs(event.clientX - pressStartX) +
       Math.abs(event.clientY - pressStartY);
 
-    if (moved > 12) {
-      clearTimeout(pressTimer);
-    }
+    if (moved > 12) clearTimeout(pressTimer);
   });
 
   element.addEventListener("pointerup", () => {
@@ -721,17 +719,11 @@ function displayMessage(message) {
 
   element.addEventListener("contextmenu", event => {
     event.preventDefault();
-
-    showMessageActionMenu(
-      message,
-      event.clientX,
-      event.clientY
-    );
+    showMessageActionMenu(message, event.clientX, event.clientY);
   });
 
   scrollToBottom();
 }
-
 function closeMessageActionMenu() {
   if (messageActionMenu) {
     messageActionMenu.remove();
