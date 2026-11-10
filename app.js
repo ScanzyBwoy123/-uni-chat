@@ -686,7 +686,35 @@ function displayMessage(message) {
     : "message received";
 
   element.dataset.messageId = message.id;
+// Display the message being replied to
+if (message.reply_to_message_id) {
+  const replyBox = document.createElement("div");
+  replyBox.className = "message-reply";
 
+  const replyLabel = document.createElement("small");
+  replyLabel.textContent = "↪ Replying to";
+
+  const replyText = document.createElement("div");
+  replyText.className = "message-reply-text";
+  replyText.textContent = "Loading original message...";
+
+  replyBox.appendChild(replyLabel);
+  replyBox.appendChild(replyText);
+  element.appendChild(replyBox);
+
+  db
+    .from("messages")
+    .select("body")
+    .eq("id", message.reply_to_message_id)
+    .eq("deleted_for_everyone", false)
+    .maybeSingle()
+    .then(({ data, error }) => {
+      replyText.textContent = error
+        ? "Original message unavailable"
+        : data?.body || "Original message unavailable";
+    });
+}
+  
   const body = document.createElement("div");
   body.className = "message-text";
   body.textContent = message.body || "";
