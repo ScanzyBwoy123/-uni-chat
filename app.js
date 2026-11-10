@@ -785,7 +785,6 @@ function displayMessage(message) {
     clearTimeout(pressTimer);
   });
 
-  element.addEventListener("contextmenu", event => {
     event.preventDefault();
     showMessageActionMenu(message, event.clientX, event.clientY);
   });
