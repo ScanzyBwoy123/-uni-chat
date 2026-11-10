@@ -663,5 +663,5 @@ logoutBtn.addEventListener("click", async () => {
   if (error) {
     alert("Unable to sign out. Please try again.");
     console.error(error);
-  }
+}
 });
