@@ -682,7 +682,7 @@ async function loadMessages() {
   visibleMessages.forEach(displayMessage);
   scrollToBottom();
 }
-function displayMessage(message) {
+async function displayMessage(message) {
   if (!message || loadedMessageIds.has(message.id)) return;
 
   loadedMessageIds.add(message.id);
@@ -736,7 +736,36 @@ if (message.reply_to_message_id) {
 
   element.appendChild(body);
   element.appendChild(time);
+// ---------------- DISPLAY IMAGE AND VIDEO ----------------
 
+if (message.attachment_path) {
+  const { data, error } = await db.storage
+    .from("chat-media")
+    .createSignedUrl(message.attachment_path, 3600);
+
+  if (error) {
+    console.error("Media display error:", error);
+    body.textContent = "Media could not be loaded.";
+  } else {
+    let mediaElement;
+
+    if (message.message_type === "image") {
+      mediaElement = document.createElement("img");
+      mediaElement.className = "chat-media-image";
+      mediaElement.alt = "Shared picture";
+    } else if (message.message_type === "video") {
+      mediaElement = document.createElement("video");
+      mediaElement.className = "chat-media-video";
+      mediaElement.controls = true;
+      mediaElement.playsInline = true;
+    }
+
+    if (mediaElement) {
+      mediaElement.src = data.signedUrl;
+      element.insertBefore(mediaElement, time);
+    }
+  }
+}
   if (message.edited_at) {
     const edited = document.createElement("small");
     edited.className = "message-edited";
