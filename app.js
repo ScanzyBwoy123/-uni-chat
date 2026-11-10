@@ -58,6 +58,8 @@ let loadedMessageIds = new Set();
 let initializationInProgress = false;
 let peopleCache = [];
 let conversationCache = [];
+let editingMessageId = null;
+let messageActionMenu = null;
 
 // ---------------- AUTH MESSAGES ----------------
 
