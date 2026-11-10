@@ -710,10 +710,53 @@ function displayMessage(message) {
 
   messagesContainer.appendChild(element);
 
-  let pressTimer = null;
+    let pressTimer = null;
   let pressStartX = 0;
   let pressStartY = 0;
+  let replyTriggered = false;
 
+  element.addEventListener("pointerdown", event => {
+    if (event.button !== 0) return;
+
+    pressStartX = event.clientX;
+    pressStartY = event.clientY;
+    replyTriggered = false;
+
+    clearTimeout(pressTimer);
+
+    pressTimer = setTimeout(() => {
+      showMessageActionMenu(message, pressStartX, pressStartY);
+    }, 550);
+  });
+
+  element.addEventListener("pointermove", event => {
+    const deltaX = event.clientX - pressStartX;
+    const deltaY = event.clientY - pressStartY;
+
+    if (
+      event.pointerType === "touch" &&
+      deltaX > 65 &&
+      Math.abs(deltaY) < 45 &&
+      !replyTriggered
+    ) {
+      clearTimeout(pressTimer);
+      replyTriggered = true;
+      setReplyToMessage(message);
+      return;
+    }
+
+    if (Math.abs(deltaX) + Math.abs(deltaY) > 12) {
+      clearTimeout(pressTimer);
+    }
+  });
+
+  element.addEventListener("pointerup", () => {
+    clearTimeout(pressTimer);
+  });
+
+  element.addEventListener("pointercancel", () => {
+    clearTimeout(pressTimer);
+  });
   element.addEventListener("pointerdown", event => {
     if (event.button !== 0) return;
 
@@ -774,12 +817,12 @@ function showMessageActionMenu(message, x, y) {
 
   const actions = message.sender_id === currentUser.id
     ? [
-        ["✏️ Edit message", "edit"],
-        ["🗑️ Delete for me", "delete_me"],
-        ["❌ Delete for everyone", "delete_everyone"]
+        [" Edit message", "edit"],
+        [" Delete for me", "delete_me"],
+        [" Delete for everyone", "delete_everyone"]
       ]
     : [
-        ["🗑️ Delete for me", "delete_me"]
+        [" Delete for me", "delete_me"]
       ];
 
   actions.forEach(([label, action]) => {
