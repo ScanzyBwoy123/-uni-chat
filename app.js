@@ -522,7 +522,93 @@ async function loadPartnerName() {
 
   partnerName.textContent = profile?.display_name || "Your chat partner";
 }
+// ---------------- MESSAGE ACTIONS ----------------
 
+async function handleMessageAction(action, message) {
+  if (!message || !currentUser) return;
+
+  try {
+    if (action === "edit") {
+      const newBody = prompt("Edit your message:", message.body || "");
+
+      if (newBody === null) return;
+
+      if (!newBody.trim()) {
+        alert("A message cannot be empty.");
+        return;
+      }
+
+      const { error } = await db.rpc("edit_own_message", {
+        p_message_id: message.id,
+        p_body: newBody.trim()
+      });
+
+      if (error) throw error;
+
+      message.body = newBody.trim();
+      message.edited_at = new Date().toISOString();
+
+      const element = messagesContainer.querySelector(
+        `[data-message-id="${message.id}"]`
+      );
+
+      if (element) {
+        element.querySelector(".message-text").textContent = message.body;
+
+        let editedLabel = element.querySelector(".message-edited");
+
+        if (!editedLabel) {
+          editedLabel = document.createElement("small");
+          editedLabel.className = "message-edited";
+          editedLabel.textContent = "Edited";
+          element.appendChild(editedLabel);
+        }
+      }
+
+      alert("Message edited successfully.");
+    }
+
+    if (action === "delete_me") {
+      if (!confirm("Delete this message for yourself?")) return;
+
+      const { error } = await db.rpc("hide_message_for_me", {
+        p_message_id: message.id
+      });
+
+      if (error) throw error;
+
+      const element = messagesContainer.querySelector(
+        `[data-message-id="${message.id}"]`
+      );
+
+      if (element) element.remove();
+
+      loadedMessageIds.delete(message.id);
+    }
+
+    if (action === "delete_everyone") {
+      if (!confirm("Delete this message for everyone?")) return;
+
+      const { error } = await db.rpc("delete_own_message_for_everyone", {
+        p_message_id: message.id
+      });
+
+      if (error) throw error;
+
+      const element = messagesContainer.querySelector(
+        `[data-message-id="${message.id}"]`
+      );
+
+      if (element) element.remove();
+
+      loadedMessageIds.delete(message.id);
+    }
+
+  } catch (error) {
+    console.error("Message action failed:", error);
+    alert("Action failed: " + error.message);
+  }
+}
 // ---------------- MESSAGES ----------------
 
 async function loadMessages() {
@@ -587,8 +673,12 @@ function displayMessage(message) {
     minute: "2-digit"
   });
 
-  element.appendChild(body);
-  element.appendChild(time);
+  if (message.edited_at) {
+  const edited = document.createElement("small");
+  edited.className = "message-edited";
+  edited.textContent = "Edited";
+  element.appendChild(edited);
+}
   messagesContainer.appendChild(element);
 
   let pressTimer = null;
@@ -747,6 +837,8 @@ function subscribeToMessages() {
 
   realtimeChannel = db
     .channel("private-chat-" + conversationId)
+
+    // New messages
     .on(
       "postgres_changes",
       {
@@ -761,6 +853,46 @@ function subscribeToMessages() {
         }
       }
     )
+
+    // Edited or deleted messages
+    .on(
+      "postgres_changes",
+      {
+        event: "UPDATE",
+        schema: "public",
+        table: "messages",
+        filter: "conversation_id=eq." + conversationId
+      },
+      payload => {
+        if (currentConversation !== conversationId) return;
+
+        const message = payload.new;
+
+        const element = messagesContainer.querySelector(
+          `[data-message-id="${message.id}"]`
+        );
+
+        if (message.deleted_for_everyone) {
+          if (element) element.remove();
+          return;
+        }
+
+        if (element) {
+          const body = element.querySelector(".message-text");
+
+          if (body) {
+            body.textContent = message.body || "";
+          }
+
+          if (message.edited_at && !element.querySelector(".message-edited")) {
+            const edited = document.createElement("small");
+            edited.className = "message-edited";
+            edited.textContent = "Edited";
+            element.appendChild(edited);
+          }
+        }
+      }
+    )
     .subscribe(status => {
       if (status === "SUBSCRIBED") {
         connectionStatus.textContent = "Online";
@@ -771,7 +903,6 @@ function subscribeToMessages() {
       }
     });
 }
-
 function scrollToBottom() {
   messagesContainer.scrollTop = messagesContainer.scrollHeight;
 }
