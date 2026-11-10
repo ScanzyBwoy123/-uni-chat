@@ -448,3 +448,25 @@ button:disabled {
   margin-top: 4px;
   opacity: 0.85;
 }
+/* Quoted message inside chat bubbles */
+.message-reply {
+  padding: 8px 10px;
+  margin-bottom: 8px;
+  border-left: 3px solid #d98be8;
+  border-radius: 7px;
+  background: rgba(217, 139, 232, 0.12);
+  overflow-wrap: anywhere;
+}
+
+.message-reply small {
+  display: block;
+  color: #e4a6f0;
+  font-size: 10px;
+  margin-bottom: 4px;
+}
+
+.message-reply-text {
+  font-size: 12px;
+  color: #eee0f5;
+  overflow-wrap: anywhere;
+}
