@@ -50,6 +50,12 @@ const composer = document.getElementById("composer");
 const partnerName = document.getElementById("partnerName");
 const connectionStatus = document.getElementById("connectionStatus");
 const logoutBtn = document.getElementById("logoutBtn");
+// Reply controls
+const replyPreview = document.getElementById("replyPreview");
+const replyPreviewText = document.getElementById("replyPreviewText");
+const cancelReplyBtn = document.getElementById("cancelReplyBtn");
+
+let replyingToMessage = null;
 
 let currentUser = null;
 let currentConversation = null;
