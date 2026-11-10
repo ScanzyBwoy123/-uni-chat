@@ -143,7 +143,13 @@
           <p class="preview-note">Your private conversations appear here.</p>
         </div>
 
-        <form id="composer" class="composer">
+        <div id="replyPreview" class="reply-preview hidden">
+  <div class="reply-preview-content">
+    <small>Replying to</small>
+    <span id="replyPreviewText"></span>
+  </div>
+  <button id="cancelReplyBtn" type="button" aria-label="Cancel reply">✕</button>
+</div>
           <input
             id="messageInput"
             type="text"
