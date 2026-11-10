@@ -2,8 +2,18 @@
 
 const SUPABASE_URL = "https://zrgbzzxnoylevpwjavwr.supabase.co";
 const SUPABASE_KEY = "sb_publishable_Ajj55K3s5l9_Ty_5-4hIUQ_P06hFE8d";
-const db = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
+const db = window.supabase.createClient(
+  SUPABASE_URL,
+  SUPABASE_KEY,
+  {
+    auth: {
+      persistSession: false,
+      autoRefreshToken: true,
+      detectSessionInUrl: true
+    }
+  }
+);
 // Main screens
 const authView = document.getElementById("authView");
 const appView = document.getElementById("appView");
