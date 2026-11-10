@@ -441,3 +441,10 @@ button:disabled {
     font-size: 26px;
   }
 }
+.message-edited {
+  display: block;
+  font-size: 10px;
+  color: #d8a5ff;
+  margin-top: 4px;
+  opacity: 0.85;
+}
