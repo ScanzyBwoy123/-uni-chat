@@ -273,3 +273,171 @@ button:disabled {
 
 #authMessage { color: var(--auth-success); }
 #authError   { color: var(--auth-danger); }
+/* =====================================
+   U N I CHAT — PEOPLE DIRECTORY
+===================================== */
+
+#appView {
+  width: 100%;
+  min-height: 0;
+  height: auto;
+  flex: 1;
+  overflow: hidden;
+}
+
+.people-panel,
+.chat-panel {
+  width: 100%;
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.people-panel {
+  padding: 22px 18px;
+}
+
+.directory-heading h2 {
+  margin: 8px 0;
+  font-family: Georgia, serif;
+  font-size: 29px;
+  font-weight: 400;
+}
+
+.directory-description {
+  color: #aaa4bd;
+  font-size: 12px;
+  line-height: 1.5;
+}
+
+.directory-search {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin: 20px 0;
+  padding: 0 15px;
+  background: #ffffff0d;
+  border: 1px solid #ffffff20;
+  border-radius: 14px;
+  color: #ff83b7;
+  font-size: 23px;
+}
+
+.directory-search input {
+  width: 100%;
+  min-width: 0;
+  padding: 15px 0;
+  border: 0;
+  outline: none;
+  background: transparent;
+  color: white;
+  font-size: 14px;
+}
+
+.directory-search input::placeholder {
+  color: #aaa4bd;
+}
+
+.directory-label {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin: 5px 0 12px;
+  font-size: 12px;
+}
+
+.directory-label span {
+  color: #aaa4bd;
+  font-size: 11px;
+}
+
+.people-list {
+  flex: 1;
+  min-height: 100px;
+  overflow-y: auto;
+  padding-bottom: 20px;
+}
+
+.directory-section-title {
+  margin: 18px 0 10px;
+  color: #f5a6c7;
+  font-size: 11px;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+}
+
+.person-card {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 10px;
+  padding: 14px;
+  border: 1px solid #ffffff15;
+  border-radius: 15px;
+  background: #ffffff09;
+}
+
+.person-details {
+  min-width: 0;
+}
+
+.person-details strong {
+  display: block;
+  overflow-wrap: anywhere;
+  font-size: 13px;
+}
+
+.person-details small {
+  display: block;
+  margin-top: 5px;
+  color: #aaa4bd;
+  font-size: 11px;
+}
+
+.person-message-btn {
+  flex-shrink: 0;
+  padding: 9px 13px;
+  border: 0;
+  border-radius: 20px;
+  background: linear-gradient(100deg, #ff78ad, #c77bdb);
+  color: #241329;
+  font-size: 11px;
+  font-weight: bold;
+}
+
+.chat-panel {
+  min-height: 500px;
+}
+
+.chat-head {
+  flex-shrink: 0;
+}
+
+#messages {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+}
+
+#composer {
+  flex-shrink: 0;
+}
+
+@media (max-width: 480px) {
+  .shell {
+    width: 100%;
+    min-height: 96vh;
+    border-radius: 20px;
+  }
+
+  .people-panel {
+    padding: 18px 14px;
+  }
+
+  .directory-heading h2 {
+    font-size: 26px;
+  }
+}
