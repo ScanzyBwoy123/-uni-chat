@@ -837,12 +837,15 @@ composer.addEventListener("submit", async event => {
 
   const { data, error } = await db
     .from("messages")
-    .insert({
-      conversation_id: currentConversation,
-      sender_id: currentUser.id,
-      body,
-      message_type: "text"
-    })
+ .insert({
+  conversation_id: currentConversation,
+  sender_id: currentUser.id,
+  body,
+  message_type: "text",
+  reply_to_message_id: replyingToMessage
+    ? replyingToMessage.id
+    : null
+})
     .select()
     .single();
 
@@ -855,6 +858,7 @@ composer.addEventListener("submit", async event => {
   }
 
     messageInput.value = "";
+  clearReply();
   displayMessage(data);
   messageInput.focus();
 });
