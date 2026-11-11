@@ -629,6 +629,76 @@ function subscribeToIncomingCalls() {
       console.log("Incoming call listener:", status);
     });
 }
+// ---------------- START A CALL ----------------
+
+async function startCall(callType) {
+  if (!currentUser || !currentConversation) {
+    alert("Open a conversation before starting a call.");
+    return;
+  }
+
+  if (activeCallId) {
+    alert("A call is already active.");
+    return;
+  }
+
+  try {
+    callStatus.textContent = "Starting call...";
+    callPersonName.textContent = partnerName.textContent;
+    incomingCallActions.classList.add("hidden");
+    callScreen.classList.remove("hidden");
+
+    const { data: members, error: membersError } = await db
+      .from("conversation_members")
+      .select("user_id")
+      .eq("conversation_id", currentConversation);
+
+    if (membersError) throw membersError;
+
+    const partner = members.find(
+      member => member.user_id !== currentUser.id
+    );
+
+    if (!partner) {
+      throw new Error("Chat partner not found.");
+    }
+
+    const { data: call, error } = await db
+      .from("call_sessions")
+      .insert({
+        conversation_id: currentConversation,
+        caller_id: currentUser.id,
+        callee_id: partner.user_id,
+        call_type: callType,
+        status: "ringing"
+      })
+      .select()
+      .single();
+
+    if (error) throw error;
+
+    activeCallId = call.id;
+    activeCallType = callType;
+    callPartnerId = partner.user_id;
+
+    callStatus.textContent =
+      callType === "video" ? "Calling..." : "Calling...";
+
+  } catch (error) {
+    console.error("Call error:", error);
+    callScreen.classList.add("hidden");
+    activeCallId = null;
+    alert("Unable to start the call: " + error.message);
+  }
+}
+
+audioCallBtn.addEventListener("click", () => {
+  startCall("audio");
+});
+
+videoCallBtn.addEventListener("click", () => {
+  startCall("video");
+});
 async function initializeChat(user) {
   if (!user || initializationInProgress) return;
 
