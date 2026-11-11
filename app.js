@@ -693,8 +693,8 @@ function renderDirectory() {
     filteredConversations.forEach(item => {
       peopleList.appendChild(
         createPersonCard(item.profile, "Open chat", () => {
-          openConversation(item.conversationId);
-        })
+  openConversation(item.conversationId);
+}, item)
       );
     });
   }
@@ -760,9 +760,84 @@ async function loadExistingConversations() {
 
     conversationCache.push({
       conversationId: membership.conversation_id,
-      profile
+      profile,
+      unreadCount: 0,
+      lastMessage: null
     });
   }
+
+  const conversationIds = conversationCache.map(
+    item => item.conversationId
+  );
+
+  if (!conversationIds.length) {
+    renderDirectory();
+    return;
+  }
+
+  const { data: messages, error: messagesError } = await db
+    .from("messages")
+    .select("id, conversation_id, sender_id, body, message_type, created_at, deleted_for_everyone")
+    .in("conversation_id", conversationIds)
+    .eq("deleted_for_everyone", false)
+    .order("created_at", { ascending: false })
+    .limit(1000);
+
+  if (messagesError) throw messagesError;
+
+  const visibleMessages = messages || [];
+  const messageIds = visibleMessages.map(message => message.id);
+
+  let readMessageIds = new Set();
+
+  if (messageIds.length) {
+    const { data: reads, error: readsError } = await db
+      .from("message_reads")
+      .select("message_id")
+      .eq("user_id", currentUser.id)
+      .in("message_id", messageIds);
+
+    if (readsError) {
+      console.warn("Could not load read receipts:", readsError);
+    } else {
+      readMessageIds = new Set(
+        (reads || []).map(read => read.message_id)
+      );
+    }
+  }
+
+  const byConversation = new Map(
+    conversationCache.map(item => [
+      item.conversationId,
+      item
+    ])
+  );
+
+  visibleMessages.forEach(message => {
+    const item = byConversation.get(message.conversation_id);
+
+    if (!item) return;
+
+    if (!item.lastMessage) {
+      item.lastMessage = message;
+    }
+
+    if (
+      message.sender_id !== currentUser.id &&
+      !readMessageIds.has(message.id)
+    ) {
+      item.unreadCount += 1;
+    }
+  });
+
+  conversationCache.sort((a, b) => {
+    const aTime = a.lastMessage?.created_at || "";
+    const bTime = b.lastMessage?.created_at || "";
+
+    return bTime.localeCompare(aTime);
+  });
+
+  renderDirectory();
 }
 
 // ---------------- START PRIVATE CONVERSATION ----------------
