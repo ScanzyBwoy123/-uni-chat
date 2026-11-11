@@ -229,14 +229,12 @@ async function uploadVoiceMessage(blob, mimeType) {
   displayMessage(data);
 }
 
-voiceRecordBtn.addEventListener("click", async () => {
-
+voiceRecordBtn.addEventListener("click", 
   // Stop an existing recording
-  if (activeRecorder && activeRecorder.state === "recording") {
-    voiceRecordBtn.disabled = true;
-    activeRecorder.stop();
-    return;
-  }
+if (activeRecorder && activeRecorder.state === "recording") {
+  activeRecorder.stop();
+  return;
+}                              
 
   if (!navigator.mediaDevices?.getUserMedia ||
       !window.MediaRecorder) {
