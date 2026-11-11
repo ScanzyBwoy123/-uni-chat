@@ -75,8 +75,10 @@ let editingMessageId = null;
 let messageActionMenu = null;
 // ---------------- VOICE AND VIDEO CALLING ----------------
 
-const audioCallBtn = document.getElementById("audioCallBtn");
-const videoCallBtn = document.getElementById("videoCallBtn");
+const callMenuToggle = document.getElementById("callMenuToggle");
+const callDropdown = document.getElementById("callDropdown");
+const audioCallMenuItem = document.getElementById("audioCallMenuItem");
+const videoCallMenuItem = document.getElementById("videoCallMenuItem");
 
 const callScreen = document.getElementById("callScreen");
 const callStatus = document.getElementById("callStatus");
@@ -692,11 +694,24 @@ async function startCall(callType) {
   }
 }
 
-audioCallBtn.addEventListener("click", () => {
+// ---------------- CALL DROPDOWN ----------------
+
+callMenuToggle.addEventListener("click", () => {
+  const isOpen = !callDropdown.classList.contains("hidden");
+
+  callDropdown.classList.toggle("hidden");
+  callMenuToggle.setAttribute("aria-expanded", String(!isOpen));
+});
+
+audioCallMenuItem.addEventListener("click", () => {
+  callDropdown.classList.add("hidden");
+  callMenuToggle.setAttribute("aria-expanded", "false");
   startCall("audio");
 });
 
-videoCallBtn.addEventListener("click", () => {
+videoCallMenuItem.addEventListener("click", () => {
+  callDropdown.classList.add("hidden");
+  callMenuToggle.setAttribute("aria-expanded", "false");
   startCall("video");
 });
 // ---------------- CALL ACCEPT, DECLINE AND END ----------------
