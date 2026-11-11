@@ -810,9 +810,30 @@ if (message.attachment_path) {
     }
 
     if (mediaElement) {
-      mediaElement.src = data.signedUrl;
-      element.insertBefore(mediaElement, time);
-    }
+  mediaElement.src = data.signedUrl;
+
+  if (message.message_type === "image") {
+    mediaElement.style.cursor = "zoom-in";
+
+    mediaElement.addEventListener("click", () => {
+      openMediaViewer(data.signedUrl, "image");
+    });
+
+  } else if (message.message_type === "video") {
+    const expandButton = document.createElement("button");
+
+    expandButton.type = "button";
+    expandButton.textContent = "⛶ View full screen";
+
+    expandButton.addEventListener("click", () => {
+      openMediaViewer(data.signedUrl, "video");
+    });
+
+    element.insertBefore(expandButton, time);
+  }
+
+  element.insertBefore(mediaElement, time);
+}
   }
 }
   if (message.edited_at) {
