@@ -110,6 +110,176 @@ let callPartnerId = null;
 let pendingIceCandidates = [];
 let isMicrophoneMuted = false;
 let isCameraEnabled = true;
+// ---------------- WEBRTC CONNECTION HELPERS ----------------
+
+async function sendCallSignal(signalType, payload) {
+  if (!activeCallId || !callPartnerId || !currentUser) return;
+
+  const { error } = await db
+    .from("call_signals")
+    .insert({
+      call_id: activeCallId,
+      sender_id: currentUser.id,
+      recipient_id: callPartnerId,
+      signal_type: signalType,
+      payload: payload
+    });
+
+  if (error) {
+    console.error("Call signalling error:", error);
+    throw error;
+  }
+}
+
+function createCallPeerConnection() {
+  callPeer = new RTCPeerConnection({
+    iceServers: [
+      { urls: "stun:stun.l.google.com:19302" },
+      { urls: "stun:stun1.l.google.com:19302" }
+    ]
+  });
+
+  callPeer.onicecandidate = event => {
+    if (event.candidate) {
+      sendCallSignal("ice-candidate", event.candidate.toJSON())
+        .catch(console.error);
+    }
+  };
+
+  callPeer.ontrack = event => {
+    remoteVideo.srcObject = event.streams[0];
+    remoteVideo.play().catch(console.warn);
+  };
+
+  callPeer.onconnectionstatechange = () => {
+    console.log("Call connection:", callPeer.connectionState);
+
+    if (callPeer.connectionState === "connected") {
+      callStatus.textContent = "Connected";
+    }
+
+    if (callPeer.connectionState === "failed") {
+      callStatus.textContent = "Connection failed";
+    }
+  };
+
+  return callPeer;
+}
+
+async function prepareCallMedia() {
+  callStream = await navigator.mediaDevices.getUserMedia({
+    audio: true,
+    video: activeCallType === "video"
+  });
+
+  localVideo.srcObject = callStream;
+
+  if (callPeer) {
+    callStream.getTracks().forEach(track => {
+      callPeer.addTrack(track, callStream);
+    });
+  }
+
+  return callStream;
+}
+// ---------------- CALL SIGNAL LISTENER ----------------
+async function subscribeToCallSignals() {
+  if (!activeCallId || !currentUser) {
+    throw new Error("Missing call information.");
+  }
+
+  if (callChannel) {
+    await db.removeChannel(callChannel);
+    callChannel = null;
+  }
+
+  return new Promise((resolve, reject) => {
+    callChannel = db
+      .channel("call-signals-" + activeCallId)
+      .on(
+        "postgres_changes",
+        {
+          event: "INSERT",
+          schema: "public",
+          table: "call_signals",
+          filter: "call_id=eq." + activeCallId
+        },
+        async payload => {
+          const signal = payload.new;
+
+          if (!signal || signal.recipient_id !== currentUser.id) return;
+
+          try {
+            if (signal.signal_type === "offer") {
+              createCallPeerConnection();
+              await prepareCallMedia();
+
+              await callPeer.setRemoteDescription(
+                new RTCSessionDescription(signal.payload)
+              );
+
+              for (const candidate of pendingIceCandidates) {
+                await callPeer.addIceCandidate(
+                  new RTCIceCandidate(candidate)
+                );
+              }
+
+              pendingIceCandidates = [];
+
+              const answer = await callPeer.createAnswer();
+              await callPeer.setLocalDescription(answer);
+
+              await sendCallSignal("answer", answer);
+
+              callStatus.textContent = "Connecting...";
+            }
+
+            else if (signal.signal_type === "answer") {
+              await callPeer.setRemoteDescription(
+                new RTCSessionDescription(signal.payload)
+              );
+
+              for (const candidate of pendingIceCandidates) {
+                await callPeer.addIceCandidate(
+                  new RTCIceCandidate(candidate)
+                );
+              }
+
+              pendingIceCandidates = [];
+            }
+
+            else if (signal.signal_type === "ice-candidate") {
+              if (callPeer && callPeer.remoteDescription) {
+                await callPeer.addIceCandidate(
+                  new RTCIceCandidate(signal.payload)
+                );
+              } else {
+                pendingIceCandidates.push(signal.payload);
+              }
+            }
+
+          } catch (error) {
+            console.error("Call signal error:", error);
+          }
+        }
+      )
+      .subscribe(status => {
+        console.log("Call signals:", status);
+
+        if (status === "SUBSCRIBED") {
+          resolve();
+        }
+
+        if (
+          status === "CHANNEL_ERROR" ||
+          status === "TIMED_OUT" ||
+          status === "CLOSED"
+        ) {
+          reject(new Error("Could not subscribe to call signals: " + status));
+        }
+      });
+  });
+}
 // ---------------- PUSH NOTIFICATIONS ----------------
 
 const VAPID_PUBLIC_KEY =
@@ -683,17 +853,26 @@ async function startCall(callType) {
     activeCallType = callType;
     callPartnerId = partner.user_id;
 
-    callStatus.textContent =
-      callType === "video" ? "Calling..." : "Calling...";
+    callStatus.textContent = "Preparing connection...";
+
+    createCallPeerConnection();
+    await prepareCallMedia();
+
+    await subscribeToCallSignals();
+
+    const offer = await callPeer.createOffer();
+    await callPeer.setLocalDescription(offer);
+
+    await sendCallSignal("offer", offer);
+
+    callStatus.textContent = "Calling...";
 
   } catch (error) {
     console.error("Call error:", error);
-    callScreen.classList.add("hidden");
-    activeCallId = null;
+    callStatus.textContent = "Unable to start call";
     alert("Unable to start the call: " + error.message);
   }
 }
-
 // ---------------- CALL DROPDOWN ----------------
 // ---------------- CALL DROPDOWN ----------------
 
