@@ -217,6 +217,7 @@ async function acceptIncomingWebRTCCall() {
   callStatus.textContent = "Connecting...";
 }
 // ---------------- CALL SIGNAL LISTENER ----------------
+
 async function subscribeToCallSignals() {
   if (!activeCallId || !currentUser) {
     throw new Error("Missing call information.");
@@ -245,36 +246,18 @@ async function subscribeToCallSignals() {
 
           try {
             if (signal.signal_type === "offer") {
-  pendingCallOffer = signal.payload;
+              pendingCallOffer = signal.payload;
 
-  callStatus.textContent = "Incoming call — tap Accept";
+              callStatus.textContent = "Incoming call — tap Accept";
 
-  if (isCallAccepted) {
-    await acceptIncomingWebRTCCall();
-  }
-}
-
-              await callPeer.setRemoteDescription(
-                new RTCSessionDescription(signal.payload)
-              );
-
-              for (const candidate of pendingIceCandidates) {
-                await callPeer.addIceCandidate(
-                  new RTCIceCandidate(candidate)
-                );
+              if (isCallAccepted) {
+                await acceptIncomingWebRTCCall();
               }
-
-              pendingIceCandidates = [];
-
-              const answer = await callPeer.createAnswer();
-              await callPeer.setLocalDescription(answer);
-
-              await sendCallSignal("answer", answer);
-
-              callStatus.textContent = "Connecting...";
             }
 
             else if (signal.signal_type === "answer") {
+              if (!callPeer) return;
+
               await callPeer.setRemoteDescription(
                 new RTCSessionDescription(signal.payload)
               );
@@ -315,7 +298,9 @@ async function subscribeToCallSignals() {
           status === "TIMED_OUT" ||
           status === "CLOSED"
         ) {
-          reject(new Error("Could not subscribe to call signals: " + status));
+          reject(
+            new Error("Could not subscribe to call signals: " + status)
+          );
         }
       });
   });
