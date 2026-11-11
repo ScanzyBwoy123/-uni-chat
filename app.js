@@ -682,6 +682,55 @@ async function loadMessages() {
   visibleMessages.forEach(displayMessage);
   scrollToBottom();
 }
+function openMediaViewer(url, type) {
+  const overlay = document.createElement("div");
+  overlay.className = "media-viewer-overlay";
+
+  const closeButton = document.createElement("button");
+  closeButton.className = "media-viewer-close";
+  closeButton.textContent = "×";
+  closeButton.type = "button";
+
+  const content = document.createElement(
+    type === "image" ? "img" : "video"
+  );
+
+  content.className = "media-viewer-content";
+  content.src = url;
+
+  if (type === "image") {
+    content.alt = "Full-screen shared picture";
+  } else {
+    content.controls = true;
+    content.autoplay = true;
+    content.playsInline = true;
+  }
+
+  function closeViewer() {
+    document.removeEventListener("keydown", handleKey);
+    if (type === "video") {
+      content.pause();
+      content.removeAttribute("src");
+      content.load();
+    }
+    overlay.remove();
+  }
+
+  function handleKey(event) {
+    if (event.key === "Escape") closeViewer();
+  }
+
+  closeButton.addEventListener("click", closeViewer);
+
+  overlay.addEventListener("click", event => {
+    if (event.target === overlay) closeViewer();
+  });
+
+  overlay.append(closeButton, content);
+  document.body.appendChild(overlay);
+
+  document.addEventListener("keydown", handleKey);
+}
 async function displayMessage(message) {
   if (!message || loadedMessageIds.has(message.id)) return;
 
