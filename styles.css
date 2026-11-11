@@ -899,7 +899,7 @@ button:disabled {
 
 .call-dropdown {
   position: absolute;
-  top: calc(100% + 10px);
+  bottom: calc(100% + 10px);
   right: 0;
   z-index: 9999;
   min-width: 175px;
@@ -909,7 +909,6 @@ button:disabled {
   border-radius: 13px;
   box-shadow: 0 8px 25px #00000055;
 }
-
 .call-dropdown button {
   display: flex;
   align-items: center;
