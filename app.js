@@ -1716,10 +1716,16 @@ function subscribeToMessages() {
         filter: "conversation_id=eq." + conversationId
       },
       payload => {
-        if (currentConversation === conversationId) {
-          displayMessage(payload.new);
-        }
-      }
+  if (currentConversation === conversationId) {
+    displayMessage(payload.new);
+
+    if (payload.new.sender_id !== currentUser.id) {
+      markMessageRead(payload.new.id).then(() => refreshInbox());
+    } else {
+      refreshInbox();
+    }
+  }
+}
     )
 
     // Edited or deleted messages
