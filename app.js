@@ -880,12 +880,12 @@ function showMessageActionMenu(message, x, y) {
 
   const actions = message.sender_id === currentUser.id
     ? [
-        ["✏️ Edit message", "edit"],
-        ["🗑️ Delete for me", "delete_me"],
-        ["❌ Delete for everyone", "delete_everyone"]
+        [" Edit message", "edit"],
+        [" Delete for me", "delete_me"],
+        [" Delete for everyone", "delete_everyone"]
       ]
     : [
-        ["🗑️ Delete for me", "delete_me"]
+        [" Delete for me", "delete_me"]
       ];
 
   actions.forEach(([label, action]) => {
