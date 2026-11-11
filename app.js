@@ -562,9 +562,10 @@ async function initializeChat(user) {
   peopleList.replaceChildren();
 
   try {
-    await loadExistingConversations();
-    await loadPeople();
-  } catch (error) {
+  await loadExistingConversations();
+  await loadPeople();
+  subscribeToInboxUpdates();
+} catch (error) {
     console.error(error);
     peopleCount.textContent = "Unable to load";
     showDirectoryNotice("We couldn't load the directory. Please refresh and try again.");
