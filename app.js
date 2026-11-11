@@ -830,8 +830,21 @@ if (message.attachment_path) {
 
   scrollToBottom();
 }
+// ---------------- MESSAGE ACTION MENU ----------------
+
 function closeMessageActionMenu() {
   if (messageActionMenu) {
+    document.removeEventListener(
+      "pointerdown",
+      messageActionMenu.outsideHandler,
+      true
+    );
+
+    document.removeEventListener(
+      "keydown",
+      messageActionMenu.escapeHandler
+    );
+
     messageActionMenu.remove();
     messageActionMenu = null;
   }
@@ -843,24 +856,36 @@ function showMessageActionMenu(message, x, y) {
   const menu = document.createElement("div");
 
   menu.style.position = "fixed";
-  menu.style.left = Math.min(x, window.innerWidth - 180) + "px";
-  menu.style.top = Math.min(y, window.innerHeight - 180) + "px";
-  menu.style.zIndex = "9999";
+  menu.style.left = Math.max(
+    10,
+    Math.min(x, window.innerWidth - 190)
+  ) + "px";
+
+  menu.style.top = Math.max(
+    10,
+    Math.min(y, window.innerHeight - 260)
+  ) + "px";
+
+  menu.style.zIndex = "99999";
   menu.style.background = "#24152f";
   menu.style.color = "white";
   menu.style.padding = "8px";
-  menu.style.borderRadius = "12px";
-  menu.style.boxShadow = "0 4px 18px rgba(0,0,0,0.35)";
-  menu.style.minWidth = "150px";
+  menu.style.borderRadius = "14px";
+  menu.style.boxShadow = "0 5px 25px rgba(0,0,0,0.5)";
+  menu.style.minWidth = "170px";
+
+  menu.addEventListener("pointerdown", event => {
+    event.stopPropagation();
+  });
 
   const actions = message.sender_id === currentUser.id
     ? [
-        [" Edit message", "edit"],
-        [" Delete for me", "delete_me"],
-        [" Delete for everyone", "delete_everyone"]
+        ["✏️ Edit message", "edit"],
+        ["🗑️ Delete for me", "delete_me"],
+        ["❌ Delete for everyone", "delete_everyone"]
       ]
     : [
-        [" Delete for me", "delete_me"]
+        ["🗑️ Delete for me", "delete_me"]
       ];
 
   actions.forEach(([label, action]) => {
@@ -868,14 +893,16 @@ function showMessageActionMenu(message, x, y) {
 
     button.type = "button";
     button.textContent = label;
+
     button.style.display = "block";
     button.style.width = "100%";
-    button.style.padding = "11px";
+    button.style.padding = "12px";
     button.style.border = "none";
     button.style.background = "transparent";
     button.style.color = "white";
     button.style.textAlign = "left";
     button.style.fontSize = "14px";
+    button.style.cursor = "pointer";
 
     button.addEventListener("click", () => {
       closeMessageActionMenu();
@@ -885,8 +912,58 @@ function showMessageActionMenu(message, x, y) {
     menu.appendChild(button);
   });
 
+  // Cancel button
+  const cancelButton = document.createElement("button");
+
+  cancelButton.type = "button";
+  cancelButton.textContent = "Cancel";
+
+  cancelButton.style.display = "block";
+  cancelButton.style.width = "100%";
+  cancelButton.style.padding = "12px";
+  cancelButton.style.marginTop = "5px";
+  cancelButton.style.border = "none";
+  cancelButton.style.borderTop = "1px solid #ffffff30";
+  cancelButton.style.background = "transparent";
+  cancelButton.style.color = "#ff9ac5";
+  cancelButton.style.fontSize = "14px";
+  cancelButton.style.cursor = "pointer";
+
+  cancelButton.addEventListener("click", closeMessageActionMenu);
+
+  menu.appendChild(cancelButton);
+
+  // Close when tapping outside
+  menu.outsideHandler = event => {
+    if (!menu.contains(event.target)) {
+      closeMessageActionMenu();
+    }
+  };
+
+  // Close when pressing Escape
+  menu.escapeHandler = event => {
+    if (event.key === "Escape") {
+      closeMessageActionMenu();
+    }
+  };
+
   document.body.appendChild(menu);
   messageActionMenu = menu;
+
+  setTimeout(() => {
+    if (messageActionMenu === menu) {
+      document.addEventListener(
+        "pointerdown",
+        menu.outsideHandler,
+        true
+      );
+
+      document.addEventListener(
+        "keydown",
+        menu.escapeHandler
+      );
+    }
+  }, 0);
 }
  // ---------------- IMAGE AND VIDEO UPLOAD ----------------
 
