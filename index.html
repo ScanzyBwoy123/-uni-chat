@@ -143,26 +143,30 @@
   title="Enable notifications"
 >
   🔔
-</button>
+<div class="call-menu-container">
   <button
-  id="audioCallBtn"
-  class="icon-btn"
-  type="button"
-  aria-label="Start voice call"
-  title="Voice call"
->
-  📞
-</button>
+    id="callMenuToggle"
+    class="icon-btn call-menu-toggle"
+    type="button"
+    aria-label="Call options"
+    aria-expanded="false"
+    title="Call"
+  >
+    <svg viewBox="0 0 24 24" aria-hidden="true">
+      <path d="M22 16.92v3a2 2 0 0 1-2.18 2A19.8 19.8 0 0 1 11.2 18.8a19.5 19.5 0 0 1-6-6A19.8 19.8 0 0 1 2.09 3.18 2 2 0 0 1 4.08 1h3a2 2 0 0 1 2 1.72"/>
+    </svg>
+    <span>⌄</span>
+  </button>
 
-<button
-  id="videoCallBtn"
-  class="icon-btn"
-  type="button"
-  aria-label="Start video call"
-  title="Video call"
->
-  🎥
-</button>        
+  <div id="callDropdown" class="call-dropdown hidden">
+    <button id="audioCallMenuItem" type="button">
+      📞 Voice call
+    </button>
+    <button id="videoCallMenuItem" type="button">
+      🎥 Video call
+    </button>
+  </div>
+</div>
 
 <button id="logoutBtn" class="icon-btn" type="button" aria-label="Sign out">
   ↪
