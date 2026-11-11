@@ -591,3 +591,74 @@ button:disabled {
   color: white;
   opacity: 1;
 }
+/* MODERN DELETE CONFIRMATION */
+
+.uni-confirm-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 100000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  background: rgba(10, 7, 20, 0.72);
+  backdrop-filter: blur(7px);
+}
+
+.uni-confirm-dialog {
+  width: 100%;
+  max-width: 340px;
+  padding: 25px;
+  border-radius: 22px;
+  background: #241b35;
+  color: white;
+  box-shadow: 0 15px 50px rgba(0, 0, 0, 0.35);
+  animation: uniDialogIn 0.2s ease;
+}
+
+.uni-confirm-dialog h2 {
+  margin: 0 0 12px;
+  font-size: 19px;
+}
+
+.uni-confirm-dialog p {
+  color: #d6cadd;
+  font-size: 14px;
+  line-height: 1.6;
+}
+
+.uni-confirm-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  margin-top: 24px;
+}
+
+.uni-confirm-actions button {
+  border: none;
+  border-radius: 12px;
+  padding: 11px 17px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.uni-confirm-cancel {
+  background: #40334f;
+  color: white;
+}
+
+.uni-confirm-delete {
+  background: #e34c83;
+  color: white;
+}
+
+@keyframes uniDialogIn {
+  from {
+    opacity: 0;
+    transform: translateY(10px) scale(0.97);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
