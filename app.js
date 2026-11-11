@@ -283,7 +283,8 @@ voiceRecordBtn.addEventListener("click", async () => {
       }
 
       recordingStatus.classList.add("hidden");
-      voiceRecordBtn.textContent = "🎙️";
+      voiceRecordBtn.textContent = "Record";
+voiceRecordBtn.classList.remove("is-recording");
 
       const blob = new Blob(audioChunks, {
         type: activeRecorder?.mimeType || "audio/webm"
@@ -326,7 +327,8 @@ activeRecorder.start();
 
     recordingStartedAt = Date.now();
 
-    voiceRecordBtn.textContent = "⏹️ Stop";
+    voiceRecordBtn.textContent = "STOP";
+voiceRecordBtn.classList.add("is-recording");
 
     recordingStatus.classList.remove("hidden");
 
@@ -362,7 +364,7 @@ activeRecorder.start();
     alert("Could not access your microphone: " + error.message);
 
     voiceRecordBtn.textContent = "🎙️";
-    voiceRecordBtn.disabled = false;
+    
 
     setComposerEnabled(!!currentConversation);
   }
