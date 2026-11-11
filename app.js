@@ -695,26 +695,37 @@ async function startCall(callType) {
 }
 
 // ---------------- CALL DROPDOWN ----------------
+// ---------------- CALL DROPDOWN ----------------
 
-callMenuToggle.addEventListener("click", () => {
-  const isOpen = !callDropdown.classList.contains("hidden");
-
-  callDropdown.classList.toggle("hidden");
-  callMenuToggle.setAttribute("aria-expanded", String(!isOpen));
-});
-
-audioCallMenuItem.addEventListener("click", () => {
-  callDropdown.classList.add("hidden");
-  callMenuToggle.setAttribute("aria-expanded", "false");
-  startCall("audio");
-});
-
-videoCallMenuItem.addEventListener("click", () => {
-  callDropdown.classList.add("hidden");
-  callMenuToggle.setAttribute("aria-expanded", "false");
-  startCall("video");
-});
 document.addEventListener("click", event => {
+  const toggle = event.target.closest("#callMenuToggle");
+  const voice = event.target.closest("#audioCallMenuItem");
+  const video = event.target.closest("#videoCallMenuItem");
+
+  if (toggle) {
+    event.preventDefault();
+
+    const isOpen = !callDropdown.classList.contains("hidden");
+
+    callDropdown.classList.toggle("hidden", isOpen);
+    toggle.setAttribute("aria-expanded", String(!isOpen));
+    return;
+  }
+
+  if (voice) {
+    callDropdown.classList.add("hidden");
+    callMenuToggle.setAttribute("aria-expanded", "false");
+    startCall("audio");
+    return;
+  }
+
+  if (video) {
+    callDropdown.classList.add("hidden");
+    callMenuToggle.setAttribute("aria-expanded", "false");
+    startCall("video");
+    return;
+  }
+
   if (!event.target.closest(".call-menu-container")) {
     callDropdown.classList.add("hidden");
     callMenuToggle.setAttribute("aria-expanded", "false");
