@@ -73,6 +73,41 @@ let inboxRealtimeChannel = null;
 let inboxRefreshTimer = null;
 let editingMessageId = null;
 let messageActionMenu = null;
+// ---------------- VOICE AND VIDEO CALLING ----------------
+
+const audioCallBtn = document.getElementById("audioCallBtn");
+const videoCallBtn = document.getElementById("videoCallBtn");
+
+const callScreen = document.getElementById("callScreen");
+const callStatus = document.getElementById("callStatus");
+const callPersonName = document.getElementById("callPersonName");
+const callTimer = document.getElementById("callTimer");
+const callAvatar = document.getElementById("callAvatar");
+
+const localVideo = document.getElementById("localVideo");
+const remoteVideo = document.getElementById("remoteVideo");
+
+const closeCallBtn = document.getElementById("closeCallBtn");
+const muteCallBtn = document.getElementById("muteCallBtn");
+const cameraCallBtn = document.getElementById("cameraCallBtn");
+const endCallBtn = document.getElementById("endCallBtn");
+
+const incomingCallActions = document.getElementById("incomingCallActions");
+const acceptCallBtn = document.getElementById("acceptCallBtn");
+const declineCallBtn = document.getElementById("declineCallBtn");
+
+let callPeer = null;
+let callStream = null;
+let callChannel = null;
+let activeCallId = null;
+let activeCallType = null;
+let callTimerInterval = null;
+let callStartedAt = null;
+let incomingCall = null;
+let callPartnerId = null;
+let pendingIceCandidates = [];
+let isMicrophoneMuted = false;
+let isCameraEnabled = true;
 // ---------------- PUSH NOTIFICATIONS ----------------
 
 const VAPID_PUBLIC_KEY =
