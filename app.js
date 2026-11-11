@@ -52,6 +52,7 @@ const mediaInput = document.getElementById("mediaInput");
 const partnerName = document.getElementById("partnerName");
 const connectionStatus = document.getElementById("connectionStatus");
 const logoutBtn = document.getElementById("logoutBtn");
+const enableNotificationsBtn = document.getElementById("enableNotificationsBtn");
 // Reply controls
 const replyPreview = document.getElementById("replyPreview");
 const replyPreviewText = document.getElementById("replyPreviewText");
@@ -68,6 +69,90 @@ let peopleCache = [];
 let conversationCache = [];
 let editingMessageId = null;
 let messageActionMenu = null;
+// ---------------- PUSH NOTIFICATIONS ----------------
+
+const VAPID_PUBLIC_KEY =
+  "BCKiDBhZsdtjkWRAoNZDYb-JCqRDu8v3xjWSueeAmHymIzeYbBqU3BSVoJ6-C8GBqoEpTVzNlR7-72Bu_-gKcUc";
+
+function urlBase64ToUint8Array(base64String) {
+  const padding = "=".repeat((4 - base64String.length % 4) % 4);
+  const base64 = (base64String + padding)
+    .replace(/-/g, "+")
+    .replace(/_/g, "/");
+
+  const rawData = atob(base64);
+  return Uint8Array.from(rawData, char => char.charCodeAt(0));
+}
+
+function encodePushKey(key) {
+  return btoa(String.fromCharCode(...new Uint8Array(key)))
+    .replace(/\+/g, "-")
+    .replace(/\//g, "_")
+    .replace(/=+$/g, "");
+}
+
+enableNotificationsBtn.addEventListener("click", async () => {
+  if (!currentUser) {
+    alert("Please sign in first.");
+    return;
+  }
+
+  if (!("serviceWorker" in navigator) ||
+      !("PushManager" in window) ||
+      !("Notification" in window)) {
+    alert("Push notifications are not supported by this browser.");
+    return;
+  }
+
+  try {
+    enableNotificationsBtn.disabled = true;
+    enableNotificationsBtn.textContent = "…";
+
+    const permission = await Notification.requestPermission();
+
+    if (permission !== "granted") {
+      throw new Error("Notification permission was not granted.");
+    }
+
+    const registration = await navigator.serviceWorker.ready;
+
+    let subscription = await registration.pushManager.getSubscription();
+
+    if (!subscription) {
+      subscription = await registration.pushManager.subscribe({
+        userVisibleOnly: true,
+        applicationServerKey: urlBase64ToUint8Array(VAPID_PUBLIC_KEY)
+      });
+    }
+
+    const subscriptionData = subscription.toJSON();
+
+    const { error } = await db
+      .from("push_subscriptions")
+      .upsert({
+        user_id: currentUser.id,
+        endpoint: subscription.endpoint,
+        p256dh: subscriptionData.keys.p256dh,
+        auth: subscriptionData.keys.auth,
+        updated_at: new Date().toISOString()
+      }, {
+        onConflict: "endpoint"
+      });
+
+    if (error) throw error;
+
+    enableNotificationsBtn.textContent = "🔔";
+    alert("Notifications enabled successfully! 💗");
+
+  } catch (error) {
+    console.error("Notification setup failed:", error);
+    enableNotificationsBtn.textContent = "🔔";
+    alert("Could not enable notifications: " + error.message);
+
+  } finally {
+    enableNotificationsBtn.disabled = false;
+  }
+});
 
 // ---------------- AUTH MESSAGES ----------------
 
