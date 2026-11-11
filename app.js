@@ -53,6 +53,8 @@ const partnerName = document.getElementById("partnerName");
 const connectionStatus = document.getElementById("connectionStatus");
 const logoutBtn = document.getElementById("logoutBtn");
 const enableNotificationsBtn = document.getElementById("enableNotificationsBtn");
+const voiceRecordBtn = document.getElementById("voiceRecordBtn");
+const recordingStatus = document.getElementById("recordingStatus");
 // Reply controls
 const replyPreview = document.getElementById("replyPreview");
 const replyPreviewText = document.getElementById("replyPreviewText");
@@ -169,6 +171,199 @@ async function sendPushNotification(messageId) {
     console.warn("Push notification failed:", error);
   }
 }
+// ---------------- VOICE MESSAGES ----------------
+
+let activeRecorder = null;
+let activeAudioStream = null;
+let audioChunks = [];
+let recordingTimer = null;
+let recordingStartedAt = 0;
+
+async function uploadVoiceMessage(blob, mimeType) {
+  if (!currentUser || !currentConversation) return;
+
+  if (blob.size > 15 * 1024 * 1024) {
+    throw new Error("Voice message is too large.");
+  }
+
+  const contentType = (
+    blob.type || mimeType || "audio/webm"
+  ).split(";")[0];
+
+  let extension = "webm";
+
+  if (contentType === "audio/mp4") extension = "m4a";
+  if (contentType === "audio/ogg") extension = "ogg";
+  if (contentType === "audio/mpeg") extension = "mp3";
+
+  const filePath =
+    `${currentConversation}/${currentUser.id}/${crypto.randomUUID()}.${extension}`;
+
+  const { error: uploadError } = await db.storage
+    .from("chat-media")
+    .upload(filePath, blob, {
+      contentType,
+      upsert: false
+    });
+
+  if (uploadError) throw uploadError;
+
+  const { data, error } = await db
+    .from("messages")
+    .insert({
+      conversation_id: currentConversation,
+      sender_id: currentUser.id,
+      message_type: "voice",
+      body: null,
+      attachment_path: filePath
+    })
+    .select()
+    .single();
+
+  if (error) {
+    await db.storage.from("chat-media").remove([filePath]);
+    throw error;
+  }
+
+  sendPushNotification(data.id);
+  displayMessage(data);
+}
+
+voiceRecordBtn.addEventListener("click", async () => {
+
+  // Stop an existing recording
+  if (activeRecorder && activeRecorder.state === "recording") {
+    voiceRecordBtn.disabled = true;
+    activeRecorder.stop();
+    return;
+  }
+
+  if (!navigator.mediaDevices?.getUserMedia ||
+      !window.MediaRecorder) {
+    alert("Voice recording is not supported by this browser.");
+    return;
+  }
+
+  try {
+    activeAudioStream = await navigator.mediaDevices.getUserMedia({
+      audio: true
+    });
+
+    const supportedTypes = [
+      "audio/mp4",
+      "audio/webm;codecs=opus",
+      "audio/webm",
+      "audio/ogg;codecs=opus"
+    ];
+
+    const selectedType = supportedTypes.find(type =>
+      MediaRecorder.isTypeSupported(type)
+    );
+
+    activeRecorder = new MediaRecorder(
+      activeAudioStream,
+      selectedType ? { mimeType: selectedType } : undefined
+    );
+
+    audioChunks = [];
+
+    activeRecorder.ondataavailable = event => {
+      if (event.data.size > 0) {
+        audioChunks.push(event.data);
+      }
+    };
+
+    activeRecorder.onstop = async () => {
+
+      clearInterval(recordingTimer);
+
+      if (activeAudioStream) {
+        activeAudioStream.getTracks().forEach(track => track.stop());
+        activeAudioStream = null;
+      }
+
+      recordingStatus.classList.add("hidden");
+      voiceRecordBtn.textContent = "🎙️";
+
+      const blob = new Blob(audioChunks, {
+        type: activeRecorder?.mimeType || "audio/webm"
+      });
+
+      activeRecorder = null;
+
+      try {
+        if (!blob.size) {
+          throw new Error("No audio was recorded.");
+        }
+
+        recordingStatus.textContent = "Sending voice message...";
+
+        await uploadVoiceMessage(blob, blob.type);
+
+        recordingStatus.textContent = "Voice message sent! 💗";
+
+      } catch (error) {
+        console.error("Voice message error:", error);
+        alert("Voice message failed: " + error.message);
+
+      } finally {
+        setComposerEnabled(!!currentConversation);
+        voiceRecordBtn.disabled = false;
+        audioChunks = [];
+
+        setTimeout(() => {
+          recordingStatus.classList.add("hidden");
+        }, 2000);
+      }
+    };
+
+    setComposerEnabled(false);
+
+    activeRecorder.start();
+
+    recordingStartedAt = Date.now();
+
+    voiceRecordBtn.textContent = "⏹️ Stop";
+
+    recordingStatus.classList.remove("hidden");
+
+    recordingTimer = setInterval(() => {
+      const seconds = Math.floor(
+        (Date.now() - recordingStartedAt) / 1000
+      );
+
+      const minutes = Math.floor(seconds / 60);
+      const remainingSeconds = seconds % 60;
+
+      recordingStatus.textContent =
+        "Recording " +
+        String(minutes).padStart(2, "0") +
+        ":" +
+        String(remainingSeconds).padStart(2, "0");
+
+      // Maximum recording time: 2 minutes
+      if (seconds >= 120 && activeRecorder?.state === "recording") {
+        activeRecorder.stop();
+      }
+
+    }, 1000);
+
+  } catch (error) {
+    console.error("Microphone error:", error);
+
+    if (activeAudioStream) {
+      activeAudioStream.getTracks().forEach(track => track.stop());
+      activeAudioStream = null;
+    }
+
+    alert("Could not access your microphone: " + error.message);
+
+    voiceRecordBtn.textContent = "🎙️";
+    voiceRecordBtn.disabled = false;
+
+    setComposerEnabled(!!currentConversation);
+  }
+});
 // ---------------- AUTH MESSAGES ----------------
 
 function showError(message) {
@@ -235,6 +430,7 @@ function setComposerEnabled(enabled) {
   sendBtn.disabled = !enabled;
   attachBtn.disabled = !enabled;
   mediaInput.disabled = !enabled;
+  voiceRecordBtn.disabled = !enabled;
 }
 attachBtn.addEventListener("click", () => {
   if (!currentUser || !currentConversation) return;
@@ -902,6 +1098,22 @@ if (message.attachment_path) {
       mediaElement = document.createElement("img");
       mediaElement.className = "chat-media-image";
       mediaElement.alt = "Shared picture";
+      } else if (message.message_type === "voice") {
+
+  mediaElement = document.createElement("audio");
+
+  mediaElement.className = "chat-voice-audio";
+
+  mediaElement.controls = true;
+
+  mediaElement.preload = "metadata";
+
+  mediaElement.setAttribute(
+    "aria-label",
+    "Voice message"
+  );
+
+  body.textContent = " Voice message";
     } else if (message.message_type === "video") {
       mediaElement = document.createElement("video");
       mediaElement.className = "chat-media-video";
