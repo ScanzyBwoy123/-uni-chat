@@ -537,7 +537,13 @@ db.auth.onAuthStateChange((event, session) => {
       db.removeChannel(realtimeChannel);
       realtimeChannel = null;
     }
+if (inboxRealtimeChannel) {
+  db.removeChannel(inboxRealtimeChannel);
+  inboxRealtimeChannel = null;
+}
 
+clearTimeout(inboxRefreshTimer);
+inboxRefreshTimer = null;
     showAuth();
   }
 });
