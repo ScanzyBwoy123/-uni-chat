@@ -587,23 +587,58 @@ function createSectionTitle(title) {
   peopleList.appendChild(heading);
 }
 
-function createPersonCard(profile, buttonText, action) {
+function createPersonCard(profile, buttonText, action, conversation = null) {
   const card = document.createElement("div");
   card.className = "person-card";
+
+  if (conversation?.unreadCount > 0) {
+    card.classList.add("has-unread");
+  }
 
   const details = document.createElement("div");
   details.className = "person-details";
 
+  const nameRow = document.createElement("div");
+  nameRow.className = "person-name-row";
+
   const name = document.createElement("strong");
   name.textContent = profile.display_name || "u n i chat user";
+  nameRow.appendChild(name);
+
+  if (conversation?.unreadCount > 0) {
+    const badge = document.createElement("span");
+    badge.className = "unread-badge";
+    badge.textContent = conversation.unreadCount > 99
+      ? "99+"
+      : String(conversation.unreadCount);
+
+    nameRow.appendChild(badge);
+  }
 
   const username = document.createElement("small");
   username.textContent = profile.username
     ? "@" + profile.username
     : "Member";
 
-  details.appendChild(name);
+  details.appendChild(nameRow);
   details.appendChild(username);
+
+  if (conversation?.lastMessage) {
+    const preview = document.createElement("small");
+    preview.className = "person-preview";
+
+    const message = conversation.lastMessage;
+    const prefix = message.sender_id === currentUser.id ? "You: " : "";
+
+    preview.textContent = prefix + (
+      message.body ||
+      (message.message_type === "voice" ? "🎤 Voice message" :
+      message.message_type === "image" ? "📷 Photo" :
+      message.message_type === "video" ? "🎬 Video" : "Attachment")
+    );
+
+    details.appendChild(preview);
+  }
 
   const button = document.createElement("button");
   button.type = "button";
