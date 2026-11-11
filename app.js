@@ -8,10 +8,10 @@ const db = window.supabase.createClient(
   SUPABASE_KEY,
   {
     auth: {
-      persistSession: false,
-      autoRefreshToken: true,
-      detectSessionInUrl: true
-    }
+  persistSession: true,
+  autoRefreshToken: true,
+  detectSessionInUrl: true
+}
   }
 );
 // Main screens
