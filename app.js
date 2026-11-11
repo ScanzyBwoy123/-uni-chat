@@ -110,6 +110,8 @@ let callPartnerId = null;
 let pendingIceCandidates = [];
 let isMicrophoneMuted = false;
 let isCameraEnabled = true;
+let isCallAccepted = false;
+let pendingCallOffer = null;
 // ---------------- WEBRTC CONNECTION HELPERS ----------------
 
 async function sendCallSignal(signalType, payload) {
@@ -182,6 +184,38 @@ async function prepareCallMedia() {
 
   return callStream;
 }
+// ---------------- ACCEPT INCOMING WEBRTC CALL ----------------
+
+async function acceptIncomingWebRTCCall() {
+  if (!pendingCallOffer || !activeCallId) {
+    throw new Error("The caller's connection offer has not arrived yet.");
+  }
+
+  isCallAccepted = true;
+
+  createCallPeerConnection();
+  await prepareCallMedia();
+
+  await callPeer.setRemoteDescription(
+    new RTCSessionDescription(pendingCallOffer)
+  );
+
+  for (const candidate of pendingIceCandidates) {
+    await callPeer.addIceCandidate(
+      new RTCIceCandidate(candidate)
+    );
+  }
+
+  pendingIceCandidates = [];
+
+  const answer = await callPeer.createAnswer();
+  await callPeer.setLocalDescription(answer);
+
+  await sendCallSignal("answer", answer);
+
+  pendingCallOffer = null;
+  callStatus.textContent = "Connecting...";
+}
 // ---------------- CALL SIGNAL LISTENER ----------------
 async function subscribeToCallSignals() {
   if (!activeCallId || !currentUser) {
@@ -211,8 +245,14 @@ async function subscribeToCallSignals() {
 
           try {
             if (signal.signal_type === "offer") {
-              createCallPeerConnection();
-              await prepareCallMedia();
+  pendingCallOffer = signal.payload;
+
+  callStatus.textContent = "Incoming call — tap Accept";
+
+  if (isCallAccepted) {
+    await acceptIncomingWebRTCCall();
+  }
+}
 
               await callPeer.setRemoteDescription(
                 new RTCSessionDescription(signal.payload)
@@ -780,11 +820,13 @@ function subscribeToIncomingCalls() {
 
         if (!call || call.status !== "ringing") return;
 
-        incomingCall = call;
-        activeCallId = call.id;
-        activeCallType = call.call_type;
-        callPartnerId = call.caller_id;
+        isCallAccepted = false;
+pendingCallOffer = null;
+pendingIceCandidates = [];
 
+subscribeToCallSignals().catch(error => {
+  console.error("Unable to listen for call signals:", error);
+});
         callStatus.textContent =
           call.call_type === "video"
             ? "Incoming video call..."
@@ -946,10 +988,21 @@ async function updateActiveCall(status) {
   }
 }
 
-acceptCallBtn.addEventListener("click", () => {
-  updateActiveCall("accepted");
-});
+acceptCallBtn.addEventListener("click", async () => {
+  try {
+    await updateActiveCall("accepted");
 
+    isCallAccepted = true;
+
+    if (pendingCallOffer) {
+      await acceptIncomingWebRTCCall();
+    }
+
+  } catch (error) {
+    console.error("Accept call error:", error);
+    alert("Unable to accept call: " + error.message);
+  }
+});
 declineCallBtn.addEventListener("click", () => {
   updateActiveCall("declined");
 });
