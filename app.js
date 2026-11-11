@@ -1251,3 +1251,17 @@ logoutBtn.addEventListener("click", async () => {
     console.error(error);
 }
 });
+// ---------------- PWA SERVICE WORKER ----------------
+
+if ("serviceWorker" in navigator) {
+  window.addEventListener("load", () => {
+    navigator.serviceWorker
+      .register("./sw.js")
+      .then(() => {
+        console.log("u n i chat app is ready.");
+      })
+      .catch(error => {
+        console.error("App installation setup failed:", error);
+      });
+  });
+}
