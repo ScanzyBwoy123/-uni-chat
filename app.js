@@ -699,6 +699,57 @@ audioCallBtn.addEventListener("click", () => {
 videoCallBtn.addEventListener("click", () => {
   startCall("video");
 });
+// ---------------- CALL ACCEPT, DECLINE AND END ----------------
+
+async function updateActiveCall(status) {
+  if (!activeCallId) return;
+
+  try {
+    const { error } = await db
+      .from("call_sessions")
+      .update({ status })
+      .eq("id", activeCallId);
+
+    if (error) throw error;
+
+    if (status === "accepted") {
+      callStatus.textContent = "Call accepted — preparing connection...";
+      incomingCallActions.classList.add("hidden");
+      incomingCall = null;
+      return;
+    }
+
+    callScreen.classList.add("hidden");
+    incomingCallActions.classList.add("hidden");
+
+    activeCallId = null;
+    activeCallType = null;
+    callPartnerId = null;
+    incomingCall = null;
+
+    callStatus.textContent = "Call ended";
+
+  } catch (error) {
+    console.error("Call update error:", error);
+    alert("Unable to update call: " + error.message);
+  }
+}
+
+acceptCallBtn.addEventListener("click", () => {
+  updateActiveCall("accepted");
+});
+
+declineCallBtn.addEventListener("click", () => {
+  updateActiveCall("declined");
+});
+
+endCallBtn.addEventListener("click", () => {
+  updateActiveCall("ended");
+});
+
+closeCallBtn.addEventListener("click", () => {
+  updateActiveCall("ended");
+});
 async function initializeChat(user) {
   if (!user || initializationInProgress) return;
 
