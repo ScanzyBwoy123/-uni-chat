@@ -582,7 +582,53 @@ inboxRefreshTimer = null;
     showAuth();
   }
 });
+// ---------------- INCOMING CALL LISTENER ----------------
 
+let incomingCallChannel = null;
+
+function subscribeToIncomingCalls() {
+  if (!currentUser) return;
+
+  if (incomingCallChannel) {
+    db.removeChannel(incomingCallChannel);
+  }
+
+  incomingCallChannel = db
+    .channel("incoming-calls-" + currentUser.id)
+    .on(
+      "postgres_changes",
+      {
+        event: "INSERT",
+        schema: "public",
+        table: "call_sessions",
+        filter: "callee_id=eq." + currentUser.id
+      },
+      payload => {
+        const call = payload.new;
+
+        if (!call || call.status !== "ringing") return;
+
+        incomingCall = call;
+        activeCallId = call.id;
+        activeCallType = call.call_type;
+        callPartnerId = call.caller_id;
+
+        callStatus.textContent =
+          call.call_type === "video"
+            ? "Incoming video call..."
+            : "Incoming voice call...";
+
+        callPersonName.textContent = "Incoming call";
+        callAvatar.textContent = "♡";
+
+        incomingCallActions.classList.remove("hidden");
+        callScreen.classList.remove("hidden");
+      }
+    )
+    .subscribe(status => {
+      console.log("Incoming call listener:", status);
+    });
+}
 async function initializeChat(user) {
   if (!user || initializationInProgress) return;
 
@@ -606,6 +652,7 @@ async function initializeChat(user) {
   await loadExistingConversations();
   await loadPeople();
   subscribeToInboxUpdates();
+    subscribeToIncomingCalls();
 } catch (error) {
     console.error(error);
     peopleCount.textContent = "Unable to load";
