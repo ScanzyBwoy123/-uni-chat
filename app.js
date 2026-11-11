@@ -69,6 +69,8 @@ let loadedMessageIds = new Set();
 let initializationInProgress = false;
 let peopleCache = [];
 let conversationCache = [];
+let inboxRealtimeChannel = null;
+let inboxRefreshTimer = null;
 let editingMessageId = null;
 let messageActionMenu = null;
 // ---------------- PUSH NOTIFICATIONS ----------------
