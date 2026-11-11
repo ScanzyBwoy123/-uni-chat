@@ -231,139 +231,112 @@ async function uploadVoiceMessage(blob, mimeType) {
 
 voiceRecordBtn.addEventListener("click", async () => {
   // Stop an existing recording
-if (activeRecorder && activeRecorder.state === "recording") {
-  activeRecorder.stop();
-  return;
-}                              
-
-  if (!navigator.mediaDevices?.getUserMedia ||
-      !window.MediaRecorder) {
+  if (activeRecorder && activeRecorder.state === "recording") {
+    activeRecorder.stop();
+    return;
+  }
+  if (
+    !navigator.mediaDevices?.getUserMedia ||
+    !window.MediaRecorder
+  ) {
     alert("Voice recording is not supported by this browser.");
     return;
   }
-
   try {
     activeAudioStream = await navigator.mediaDevices.getUserMedia({
       audio: true
     });
-
     const supportedTypes = [
       "audio/mp4",
       "audio/webm;codecs=opus",
       "audio/webm",
       "audio/ogg;codecs=opus"
     ];
-
     const selectedType = supportedTypes.find(type =>
       MediaRecorder.isTypeSupported(type)
     );
-
     activeRecorder = new MediaRecorder(
       activeAudioStream,
       selectedType ? { mimeType: selectedType } : undefined
     );
-
     audioChunks = [];
-
     activeRecorder.ondataavailable = event => {
       if (event.data.size > 0) {
         audioChunks.push(event.data);
       }
     };
-
     activeRecorder.onstop = async () => {
-
       clearInterval(recordingTimer);
-
       if (activeAudioStream) {
         activeAudioStream.getTracks().forEach(track => track.stop());
         activeAudioStream = null;
       }
-
       recordingStatus.classList.add("hidden");
-      voiceRecordBtn.textContent = "Record";
-voiceRecordBtn.classList.remove("is-recording");
-
+      // Return button to idle appearance
+      voiceRecordBtn.textContent = "▶";
+      voiceRecordBtn.classList.remove("is-recording");
       const blob = new Blob(audioChunks, {
         type: activeRecorder?.mimeType || "audio/webm"
       });
-
       activeRecorder = null;
-
       try {
         if (!blob.size) {
           throw new Error("No audio was recorded.");
         }
-
         recordingStatus.textContent = "Sending voice message...";
-
         await uploadVoiceMessage(blob, blob.type);
-
         recordingStatus.textContent = "Voice message sent! 💗";
-
       } catch (error) {
         console.error("Voice message error:", error);
         alert("Voice message failed: " + error.message);
-
       } finally {
         setComposerEnabled(!!currentConversation);
         voiceRecordBtn.disabled = false;
+        voiceRecordBtn.textContent = "▶";
+        voiceRecordBtn.classList.remove("is-recording");
         audioChunks = [];
-
         setTimeout(() => {
           recordingStatus.classList.add("hidden");
         }, 2000);
       }
     };
-
     setComposerEnabled(false);
-
-// Keep the microphone button active so recording can be stopped.
-voiceRecordBtn.disabled = false;
-
-activeRecorder.start();
-
+    // Keep recording button enabled so it can stop recording
+    voiceRecordBtn.disabled = false;
+    activeRecorder.start();
     recordingStartedAt = Date.now();
-
-    voiceRecordBtn.textContent = "STOP";
-voiceRecordBtn.classList.add("is-recording");
-
+    // Show red circular stop button
+    voiceRecordBtn.textContent = "■";
+    voiceRecordBtn.classList.add("is-recording");
     recordingStatus.classList.remove("hidden");
-
     recordingTimer = setInterval(() => {
       const seconds = Math.floor(
         (Date.now() - recordingStartedAt) / 1000
       );
-
       const minutes = Math.floor(seconds / 60);
       const remainingSeconds = seconds % 60;
-
       recordingStatus.textContent =
         "Recording " +
         String(minutes).padStart(2, "0") +
         ":" +
         String(remainingSeconds).padStart(2, "0");
-
       // Maximum recording time: 2 minutes
-      if (seconds >= 120 && activeRecorder?.state === "recording") {
+      if (
+        seconds >= 120 &&
+        activeRecorder?.state === "recording"
+      ) {
         activeRecorder.stop();
       }
-
     }, 1000);
-
   } catch (error) {
     console.error("Microphone error:", error);
-
     if (activeAudioStream) {
       activeAudioStream.getTracks().forEach(track => track.stop());
       activeAudioStream = null;
     }
-
     alert("Could not access your microphone: " + error.message);
-
-    voiceRecordBtn.textContent = "🎙️";
-    
-
+    voiceRecordBtn.textContent = "▶";
+    voiceRecordBtn.classList.remove("is-recording");
     setComposerEnabled(!!currentConversation);
   }
 });
