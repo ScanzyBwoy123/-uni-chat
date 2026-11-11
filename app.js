@@ -1618,7 +1618,77 @@ sendPushNotification(data.id);
   messageInput.focus();
 });
 // ---------------- REALTIME ----------------
+async function markMessageRead(messageId) {
+  if (!messageId || !currentUser) return;
 
+  const { error } = await db.rpc("mark_message_read", {
+    p_message_id: messageId
+  });
+
+  if (error) {
+    console.warn("Could not mark message as read:", error);
+  }
+}
+
+async function refreshInbox() {
+  if (!currentUser || initializationInProgress) return;
+
+  try {
+    await loadExistingConversations();
+    renderDirectory();
+  } catch (error) {
+    console.warn("Inbox refresh failed:", error);
+  }
+}
+
+function subscribeToInboxUpdates() {
+  if (!currentUser) return;
+
+  if (inboxRealtimeChannel) {
+    db.removeChannel(inboxRealtimeChannel);
+  }
+
+  inboxRealtimeChannel = db
+    .channel("inbox-updates-" + currentUser.id)
+    .on("postgres_changes", {
+      event: "*",
+      schema: "public",
+      table: "messages"
+    }, payload => {
+      const message = payload.new || payload.old;
+
+      if (!message?.conversation_id) return;
+
+      if (
+        payload.eventType === "INSERT" &&
+        message.sender_id !== currentUser.id &&
+        currentConversation === message.conversation_id
+      ) {
+        markMessageRead(message.id);
+      }
+
+      clearTimeout(inboxRefreshTimer);
+      inboxRefreshTimer = setTimeout(refreshInbox, 400);
+    })
+    .subscribe(status => {
+      if (status === "CHANNEL_ERROR") {
+        console.warn("Inbox live updates could not connect.");
+      }
+    });
+
+  if (!window.uniInboxFocusHandler) {
+    window.uniInboxFocusHandler = () => {
+      if (document.visibilityState === "visible") {
+        refreshInbox();
+      }
+    };
+
+    document.addEventListener(
+      "visibilitychange",
+      window.uniInboxFocusHandler
+    );
+  }
+}
 function subscribeToMessages() {
   if (realtimeChannel) {
     db.removeChannel(realtimeChannel);
