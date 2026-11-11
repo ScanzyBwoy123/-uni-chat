@@ -854,6 +854,66 @@ async function loadPartnerName() {
 
   partnerName.textContent = profile?.display_name || "Your chat partner";
 }
+// ---------------- CUSTOM DELETE CONFIRMATION ----------------
+
+function showDeleteConfirmation(scope) {
+  return new Promise(resolve => {
+    const overlay = document.createElement("div");
+    overlay.className = "uni-confirm-overlay";
+
+    const dialog = document.createElement("div");
+    dialog.className = "uni-confirm-dialog";
+    dialog.setAttribute("role", "dialog");
+    dialog.setAttribute("aria-modal", "true");
+
+    const title = document.createElement("h2");
+    title.textContent = scope === "everyone"
+      ? "Delete for everyone?"
+      : "Delete for yourself?";
+
+    const description = document.createElement("p");
+    description.textContent = scope === "everyone"
+      ? "This message will be removed for both people."
+      : "This message will disappear from your chat only.";
+
+    const buttons = document.createElement("div");
+    buttons.className = "uni-confirm-actions";
+
+    const cancel = document.createElement("button");
+    cancel.textContent = "Cancel";
+    cancel.className = "uni-confirm-cancel";
+
+    const confirm = document.createElement("button");
+    confirm.textContent = "Delete";
+    confirm.className = "uni-confirm-delete";
+
+    const finish = value => {
+      overlay.remove();
+      document.removeEventListener("keydown", onKeyDown);
+      resolve(value);
+    };
+
+    const onKeyDown = event => {
+      if (event.key === "Escape") finish(false);
+    };
+
+    cancel.onclick = () => finish(false);
+    confirm.onclick = () => finish(true);
+
+    overlay.onclick = event => {
+      if (event.target === overlay) finish(false);
+    };
+
+    buttons.append(cancel, confirm);
+    dialog.append(title, description, buttons);
+    overlay.appendChild(dialog);
+    document.body.appendChild(overlay);
+
+    document.addEventListener("keydown", onKeyDown);
+    cancel.focus();
+  });
+}
+
 // ---------------- MESSAGE ACTIONS ----------------
 
 async function handleMessageAction(action, message) {
@@ -901,7 +961,7 @@ async function handleMessageAction(action, message) {
     }
 
     if (action === "delete_me") {
-      if (!confirm("Delete this message for yourself?")) return;
+      if (!(await showDeleteConfirmation("me"))) return;
 
       const { error } = await db.rpc("hide_message_for_me", {
         p_message_id: message.id
@@ -919,7 +979,7 @@ async function handleMessageAction(action, message) {
     }
 
     if (action === "delete_everyone") {
-      if (!confirm("Delete this message for everyone?")) return;
+      if (!(await showDeleteConfirmation("everyone"))) return;
 
       const { error } = await db.rpc("delete_own_message_for_everyone", {
         p_message_id: message.id
