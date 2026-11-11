@@ -153,7 +153,22 @@ enableNotificationsBtn.addEventListener("click", async () => {
     enableNotificationsBtn.disabled = false;
   }
 });
+// Send a push notification to the other chat participant
+async function sendPushNotification(messageId) {
+  try {
+    const { error } = await db.functions.invoke("send-push", {
+      body: {
+        message_id: messageId
+      }
+    });
 
+    if (error) throw error;
+
+    console.log("Push notification request completed.");
+  } catch (error) {
+    console.warn("Push notification failed:", error);
+  }
+}
 // ---------------- AUTH MESSAGES ----------------
 
 function showError(message) {
@@ -1180,7 +1195,7 @@ mediaInput.addEventListener("change", async () => {
       .single();
 
     if (error) throw error;
-
+sendPushNotification(data.id);
     displayMessage(data);
 
     alert("Media sent successfully! 💗");
@@ -1235,7 +1250,7 @@ composer.addEventListener("submit", async event => {
     alert("Message could not be sent. Please try again.");
     return;
   }
-
+sendPushNotification(data.id);
   messageInput.value = "";
   clearReply();
   displayMessage(data);
