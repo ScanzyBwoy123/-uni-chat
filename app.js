@@ -805,10 +805,14 @@ function subscribeToIncomingCalls() {
 
         if (!call || call.status !== "ringing") return;
 
-        isCallAccepted = false;
+incomingCall = call;
+activeCallId = call.id;
+activeCallType = call.call_type;
+callPartnerId = call.caller_id;
+
+isCallAccepted = false;
 pendingCallOffer = null;
 pendingIceCandidates = [];
-
 subscribeToCallSignals().catch(error => {
   console.error("Unable to listen for call signals:", error);
 });
