@@ -229,7 +229,7 @@ async function uploadVoiceMessage(blob, mimeType) {
   displayMessage(data);
 }
 
-voiceRecordBtn.addEventListener("click", 
+voiceRecordBtn.addEventListener("click", async () => {
   // Stop an existing recording
 if (activeRecorder && activeRecorder.state === "recording") {
   activeRecorder.stop();
