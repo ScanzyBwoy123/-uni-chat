@@ -714,6 +714,12 @@ videoCallMenuItem.addEventListener("click", () => {
   callMenuToggle.setAttribute("aria-expanded", "false");
   startCall("video");
 });
+document.addEventListener("click", event => {
+  if (!event.target.closest(".call-menu-container")) {
+    callDropdown.classList.add("hidden");
+    callMenuToggle.setAttribute("aria-expanded", "false");
+  }
+});
 // ---------------- CALL ACCEPT, DECLINE AND END ----------------
 
 async function updateActiveCall(status) {
