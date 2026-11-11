@@ -319,7 +319,10 @@ voiceRecordBtn.addEventListener("click", async () => {
 
     setComposerEnabled(false);
 
-    activeRecorder.start();
+// Keep the microphone button active so recording can be stopped.
+voiceRecordBtn.disabled = false;
+
+activeRecorder.start();
 
     recordingStartedAt = Date.now();
 
