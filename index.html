@@ -162,50 +162,54 @@
   <button id="cancelReplyBtn" type="button" aria-label="Cancel reply">✕</button>
 </div>
         <form id="composer" class="composer">
-          <button
-            <button
-  type="button"
-  id="voiceRecordBtn"
-  class="voice-record-btn"
-  aria-label="Record voice message"
-  title="Record voice message"
-  disabled
->
-  🎙️
-</button>
 
-<span id="recordingStatus" class="recording-status hidden">
-  Recording 00:00
-</span>
-  type="button"
-  id="attachBtn"
-  class="attach-btn"
-  aria-label="Attach picture or video"
-  disabled
->
-  ＋
-</button>
+  <button
+    type="button"
+    id="attachBtn"
+    class="attach-btn"
+    aria-label="Attach picture or video"
+    disabled
+  >
+    ＋
+  </button>
 
-<input
-  type="file"
-  id="mediaInput"
-  accept="image/*,video/*"
-  hidden
-  disabled
->
-          <input
-            id="messageInput"
-            type="text"
-            placeholder="Write a message..."
-            autocomplete="off"
-            maxlength="4000"
-            disabled
-          >
+  <input
+    type="file"
+    id="mediaInput"
+    accept="image/*,video/*"
+    hidden
+    disabled
+  >
 
-          <button id="sendBtn" class="send" type="submit" disabled>
-            ➤
-          </button>
-        </form>
+  <button
+    type="button"
+    id="voiceRecordBtn"
+    class="voice-record-btn"
+    aria-label="Record voice message"
+    title="Record voice message"
+    disabled
+  >
+    🎙️
+  </button>
+
+  <span id="recordingStatus" class="recording-status hidden">
+    Recording 00:00
+  </span>
+
+  <input
+    id="messageInput"
+    type="text"
+    placeholder="Write a message..."
+    autocomplete="off"
+    maxlength="4000"
+    disabled
+  >
+
+  <button id="sendBtn" class="send" type="submit" disabled>
+    ➤
+  </button>
+
+</form>
 
       </section>
 
