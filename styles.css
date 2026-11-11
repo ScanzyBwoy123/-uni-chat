@@ -867,3 +867,64 @@ button:disabled {
     padding-right: 16px;
   }
 }
+/* MODERN AUDIO AND VIDEO CALL DROPDOWN */
+
+.call-menu-container {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+}
+
+.call-menu-toggle {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  cursor: pointer;
+}
+
+.call-menu-toggle svg {
+  width: 21px;
+  height: 21px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.call-menu-toggle span {
+  font-size: 13px;
+}
+
+.call-dropdown {
+  position: absolute;
+  top: calc(100% + 10px);
+  right: 0;
+  z-index: 9999;
+  min-width: 175px;
+  padding: 7px;
+  background: #211a30;
+  border: 1px solid #ffffff20;
+  border-radius: 13px;
+  box-shadow: 0 8px 25px #00000055;
+}
+
+.call-dropdown button {
+  display: flex;
+  align-items: center;
+  width: 100%;
+  gap: 10px;
+  padding: 12px;
+  border: 0;
+  border-radius: 9px;
+  background: transparent;
+  color: #ffffff;
+  font-size: 14px;
+  text-align: left;
+  cursor: pointer;
+}
+
+.call-dropdown button:hover {
+  background: #ffffff15;
+}
