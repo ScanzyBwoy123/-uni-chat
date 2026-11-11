@@ -1123,10 +1123,17 @@ async function loadMessages() {
     showSystemMessage("Your conversation starts here ❤️");
     return;
   }
+visibleMessages.forEach(displayMessage);
 
-  visibleMessages.forEach(displayMessage);
-  scrollToBottom();
-}
+await Promise.all(
+  visibleMessages
+    .filter(message => message.sender_id !== currentUser.id)
+    .map(message => markMessageRead(message.id))
+);
+
+scrollToBottom();
+await refreshInbox();
+  }
 function openMediaViewer(url, type) {
   const overlay = document.createElement("div");
   overlay.className = "media-viewer-overlay";
