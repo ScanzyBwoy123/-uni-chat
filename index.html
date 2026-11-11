@@ -230,7 +230,37 @@
 </form>
 
       </section>
+<!-- VOICE AND VIDEO CALL SCREEN -->
+<div id="callScreen" class="call-screen hidden">
 
+  <div class="call-top">
+    <span id="callStatus">Connecting...</span>
+    <button id="closeCallBtn" type="button">✕</button>
+  </div>
+
+  <div class="call-person">
+    <div id="callAvatar" class="call-avatar">♡</div>
+    <h2 id="callPersonName">u n i chat</h2>
+    <p id="callTimer">00:00</p>
+  </div>
+
+  <div class="call-videos">
+    <video id="remoteVideo" autoplay playsinline></video>
+    <video id="localVideo" autoplay muted playsinline></video>
+  </div>
+
+  <div class="call-controls">
+    <button id="muteCallBtn" type="button">🎤</button>
+    <button id="cameraCallBtn" type="button">📷</button>
+    <button id="endCallBtn" type="button">📵</button>
+  </div>
+
+  <div id="incomingCallActions" class="incoming-call-actions hidden">
+    <button id="declineCallBtn" type="button">Decline</button>
+    <button id="acceptCallBtn" type="button">Accept</button>
+  </div>
+
+</div>
     </section>
 
     <footer>Made with ♡ · u n i chat</footer>
