@@ -903,3 +903,71 @@ MODERN AUDIO AND VIDEO CALL DROPDOWN
 .call-dropdown.hidden {
   display: none !important;
 }
+/* PROFILE PHOTO SETTINGS */
+
+.profile-settings {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 15px;
+  margin: 15px 0;
+  background: #ffffff0d;
+  border: 1px solid #ffffff20;
+  border-radius: 16px;
+}
+
+.profile-avatar-wrap {
+  width: 65px;
+  height: 65px;
+  flex-shrink: 0;
+}
+
+.profile-avatar,
+.profile-avatar-fallback {
+  width: 65px;
+  height: 65px;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 2px solid #ff83b7;
+}
+
+.profile-avatar-fallback {
+  display: grid;
+  place-items: center;
+  background: linear-gradient(135deg, #ff83b7, #9b59b6);
+  color: white;
+  font-size: 32px;
+}
+
+.profile-settings-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.profile-settings-info strong {
+  display: block;
+  font-size: 13px;
+}
+
+.profile-settings-info small {
+  display: block;
+  margin: 5px 0;
+  color: #aaa4bd;
+  font-size: 11px;
+}
+
+.profile-photo-actions {
+  display: flex;
+  gap: 8px;
+  margin-top: 8px;
+}
+
+.profile-photo-actions button {
+  border: none;
+  border-radius: 20px;
+  padding: 8px 13px;
+  background: linear-gradient(100deg, #ff78ad, #c77bdb);
+  color: #241329;
+  font-size: 11px;
+  font-weight: bold;
+}
