@@ -811,6 +811,8 @@ activeCallId = call.id;
 activeCallType = call.call_type;
 callPartnerId = call.caller_id;
 
+subscribeToCallStatus();
+        
 isCallAccepted = false;
 pendingCallOffer = null;
 pendingIceCandidates = [];
