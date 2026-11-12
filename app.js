@@ -1546,29 +1546,60 @@ async function loadStatuses() {
     statusList.appendChild(empty);
   }
 }
+// ---------------- STATUS COMPOSER ----------------
+
+const statusComposer = document.getElementById("statusComposer");
+const closeStatusComposer = document.getElementById("closeStatusComposer");
+const textStatusOption = document.getElementById("textStatusOption");
+const photoStatusOption = document.getElementById("photoStatusOption");
+const videoStatusOption = document.getElementById("videoStatusOption");
+
+function openStatusComposer() {
+  if (!currentUser) {
+    alert("Please sign in to create a status.");
+    return;
+  }
+
+  statusComposer.classList.remove("hidden");
+}
+
+function hideStatusComposer() {
+  statusComposer.classList.add("hidden");
+}
+
+addStatusBtn.addEventListener("click", openStatusComposer);
+
+closeStatusComposer.addEventListener("click", hideStatusComposer);
+
+statusComposer.addEventListener("click", event => {
+  if (event.target === statusComposer) {
+    hideStatusComposer();
+  }
+});
+
 // ---------------- CREATE TEXT STATUS ----------------
 
-addStatusBtn.addEventListener("click", async () => {
+textStatusOption.addEventListener("click", async () => {
   if (!currentUser) return;
 
-  const text = prompt("What would you like to share?");
+  const content = prompt("What would you like to share?");
 
-  if (text === null) return;
+  if (content === null) return;
 
-  const content = text.trim();
+  const text = content.trim();
 
-  if (!content) {
+  if (!text) {
     alert("Please enter some text.");
     return;
   }
 
-  if (content.length > 700) {
+  if (text.length > 700) {
     alert("Your status cannot exceed 700 characters.");
     return;
   }
 
-  addStatusBtn.disabled = true;
-  addStatusBtn.textContent = "Posting...";
+  textStatusOption.disabled = true;
+  textStatusOption.textContent = "Posting...";
 
   try {
     const { error } = await db
@@ -1576,11 +1607,12 @@ addStatusBtn.addEventListener("click", async () => {
       .insert({
         user_id: currentUser.id,
         status_type: "text",
-        text_content: content
+        text_content: text
       });
 
     if (error) throw error;
 
+    hideStatusComposer();
     await loadStatuses();
 
     alert("Your status has been posted! 💗");
@@ -1590,9 +1622,21 @@ addStatusBtn.addEventListener("click", async () => {
     alert("Could not post status: " + error.message);
 
   } finally {
-    addStatusBtn.disabled = false;
-    addStatusBtn.textContent = "+ Add status";
+    textStatusOption.disabled = false;
+    textStatusOption.textContent = "✍️ Text status";
   }
+});
+
+// ---------------- PHOTO STATUS ----------------
+
+photoStatusOption.addEventListener("click", () => {
+  alert("Photo status upload will be connected next.");
+});
+
+// ---------------- VIDEO STATUS ----------------
+
+videoStatusOption.addEventListener("click", () => {
+  alert("Video status upload will be connected next.");
 });
 async function initializeChat(user) {
   if (!user || initializationInProgress) return;
