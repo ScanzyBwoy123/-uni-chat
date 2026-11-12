@@ -1001,3 +1001,53 @@ MODERN AUDIO AND VIDEO CALL DROPDOWN
   object-fit: cover;
   flex-shrink: 0;
 }
+/* STATUS SECTION */
+
+.status-section {
+  margin: 18px 0;
+  padding: 15px;
+  background: #ffffff0d;
+  border: 1px solid #ffffff20;
+  border-radius: 16px;
+}
+
+.status-heading {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 14px;
+}
+
+.status-heading strong {
+  display: block;
+  font-size: 15px;
+}
+
+.status-heading small {
+  display: block;
+  margin-top: 4px;
+  color: #aaa4bd;
+  font-size: 11px;
+}
+
+#addStatusBtn {
+  border: none;
+  border-radius: 20px;
+  padding: 9px 13px;
+  background: linear-gradient(100deg, #ff78ad, #c77bdb);
+  color: #241329;
+  font-size: 12px;
+  font-weight: bold;
+}
+
+.status-list {
+  display: flex;
+  gap: 12px;
+  overflow-x: auto;
+  padding: 5px 0;
+}
+
+.status-list:empty {
+  display: none;
+}
