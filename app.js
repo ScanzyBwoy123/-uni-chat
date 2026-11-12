@@ -1650,7 +1650,8 @@ textStatusOption.addEventListener("click", () => {
   textStatusInput.focus();
 });
 
-textStatusCanvas.addEventListener("click", () => {
+textStatusCanvas.addEventListener("click", (event) => {
+  if (event.target === textStatusInput) return;
   const currentIndex = statusBackgrounds.indexOf(
     selectedStatusBackground
   );
