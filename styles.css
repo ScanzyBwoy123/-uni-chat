@@ -1274,3 +1274,17 @@ MODERN AUDIO AND VIDEO CALL DROPDOWN
   min-height: 0;
   flex: 1;
 }
+#createTextStatusBtn {
+  border: none;
+  border-radius: 22px;
+  padding: 10px 17px;
+  background: #25d366;
+  color: #075e35;
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+#createTextStatusBtn:active {
+  transform: scale(0.96);
+}
