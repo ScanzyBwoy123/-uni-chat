@@ -98,7 +98,41 @@
             </p>
           </div>
         </div>
+        <!-- MY PROFILE PHOTO -->
+<div class="profile-settings">
+  <div class="profile-avatar-wrap">
+    <img
+      id="myProfileAvatar"
+      class="profile-avatar hidden"
+      alt="My profile picture"
+    >
+    <div id="myProfileAvatarFallback" class="profile-avatar-fallback">
+      ♡
+    </div>
+  </div>
 
+  <div class="profile-settings-info">
+    <strong>Your profile photo</strong>
+    <small id="profilePhotoStatus">Add a picture to your profile.</small>
+
+    <div class="profile-photo-actions">
+      <button id="changeProfilePhotoBtn" type="button">
+        Add photo
+      </button>
+
+      <button id="removeProfilePhotoBtn" type="button" class="hidden">
+        Remove
+      </button>
+    </div>
+  </div>
+
+  <input
+    id="profilePhotoInput"
+    type="file"
+    accept="image/jpeg,image/png,image/webp"
+    hidden
+  >
+</div>
         <div class="directory-search">
           <span>⌕</span>
           <input
