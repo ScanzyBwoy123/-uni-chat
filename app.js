@@ -1266,7 +1266,38 @@ muteCallBtn.addEventListener("click", () => {
     ? "Unmute microphone"
     : "Mute microphone";
 });
+// ---------------- CAMERA ON/OFF CONTROL ----------------
 
+cameraCallBtn.addEventListener("click", () => {
+  if (activeCallType !== "video") {
+    alert("Camera controls are available during video calls.");
+    return;
+  }
+
+  if (!callStream) {
+    alert("Camera is not available.");
+    return;
+  }
+
+  const videoTracks = callStream.getVideoTracks();
+
+  if (videoTracks.length === 0) {
+    alert("No camera track found.");
+    return;
+  }
+
+  isCameraEnabled = !isCameraEnabled;
+
+  videoTracks.forEach(track => {
+    track.enabled = isCameraEnabled;
+  });
+
+  cameraCallBtn.textContent = isCameraEnabled ? "📷" : "🚫";
+
+  cameraCallBtn.title = isCameraEnabled
+    ? "Turn camera off"
+    : "Turn camera on";
+});
 closeCallBtn.addEventListener("click", () => {
   updateActiveCall("ended");
 });
