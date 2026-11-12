@@ -1120,6 +1120,39 @@ MODERN AUDIO AND VIDEO CALL DROPDOWN
   text-align: center;
   padding: 15px 5px;
 }
+/* FULL-SCREEN STATUS CREATOR */
+
+.status-composer {
+  position: fixed;
+  inset: 0;
+  z-index: 1000000;
+  display: flex;
+  justify-content: center;
+  overflow-y: auto;
+  background: #0b141a;
+}
+
+.status-composer.hidden {
+  display: none !important;
+}
+
+.status-composer-box {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  max-width: 560px;
+  min-height: 100vh;
+  box-sizing: border-box;
+  padding: 20px 16px;
+  background: #0b141a;
+  color: white;
+}
+
+#mediaStatusEditor {
+  flex: 1;
+  min-height: 0;
+  height: auto;
+}
 /* WHATSAPP-STYLE TEXT STATUS EDITOR */
 
 #textStatusEditor,
