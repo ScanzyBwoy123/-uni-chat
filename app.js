@@ -858,6 +858,72 @@ subscribeToCallSignals()
       console.log("Incoming call listener:", status);
     });
 }
+// ---------------- CALL RESOURCE CLEANUP ----------------
+
+async function cleanupCallResources() {
+  // Stop the call timer
+  if (callTimerInterval) {
+    clearInterval(callTimerInterval);
+    callTimerInterval = null;
+  }
+
+  callStartedAt = null;
+
+  // Stop microphone and camera
+  if (callStream) {
+    callStream.getTracks().forEach(track => {
+      track.stop();
+    });
+
+    callStream = null;
+  }
+
+  // Close WebRTC connection
+  if (callPeer) {
+    callPeer.ontrack = null;
+    callPeer.onicecandidate = null;
+    callPeer.onconnectionstatechange = null;
+
+    callPeer.close();
+    callPeer = null;
+  }
+
+  // Clear video elements
+  localVideo.srcObject = null;
+  remoteVideo.srcObject = null;
+
+  // Remove call signalling subscription
+  if (callChannel) {
+    await db.removeChannel(callChannel);
+    callChannel = null;
+  }
+
+  // Remove call status subscription
+  if (callStatusChannel) {
+    await db.removeChannel(callStatusChannel);
+    callStatusChannel = null;
+  }
+
+  // Reset call information
+  activeCallId = null;
+  activeCallType = null;
+  callPartnerId = null;
+  incomingCall = null;
+  pendingCallOffer = null;
+  pendingIceCandidates = [];
+  isCallAccepted = false;
+
+  // Reset call controls
+  isMicrophoneMuted = false;
+  isCameraEnabled = true;
+
+  // Hide call interface
+  incomingCallActions.classList.add("hidden");
+  callScreen.classList.add("hidden");
+
+  callStatus.textContent = "Call ended";
+  callTimer.textContent = "00:00";
+}
 // –––––––– CALL STATUS SYNCHRONISATION ––––––––
 function subscribeToCallStatus() {
   if (!activeCallId) return;
