@@ -1120,16 +1120,20 @@ MODERN AUDIO AND VIDEO CALL DROPDOWN
   text-align: center;
   padding: 15px 5px;
 }
-/* WHATSAPP-STYLE STATUS CREATOR */
+/* FULL-SCREEN WHATSAPP-STYLE STATUS CREATOR */
+
 .status-composer {
   position: fixed;
   inset: 0;
-  z-index: 9999;
+  z-index: 99999;
+  width: 100%;
+  height: 100vh;
+  height: 100dvh;
   display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: 20px;
-  background: rgba(0, 0, 0, 0.75);
+  align-items: stretch;
+  justify-content: stretch;
+  padding: 0;
+  background: #0b141a;
 }
 
 .status-composer.hidden {
@@ -1138,19 +1142,92 @@ MODERN AUDIO AND VIDEO CALL DROPDOWN
 
 .status-composer-box {
   width: 100%;
-  max-width: 380px;
-  padding: 22px;
-  border-radius: 22px;
-  background: #211a37;
-  border: 1px solid #ffffff25;
-  box-shadow: 0 15px 50px #0009;
+  max-width: none;
+  min-height: 100%;
+  padding: 55px 22px 30px;
+  border: none;
+  border-radius: 0;
+  background: #0b141a;
+  box-shadow: none;
+  color: #fff;
 }
 
 .status-composer-header {
   display: flex;
-  justify-content: space-between;
   align-items: center;
+  justify-content: flex-start;
+  gap: 22px;
+  padding-bottom: 25px;
+  border-bottom: 1px solid #ffffff18;
 }
+
+.status-composer-header h2 {
+  margin: 0;
+  font-size: 20px;
+  font-weight: 600;
+}
+
+#closeStatusComposer {
+  width: 38px;
+  height: 38px;
+  border: none;
+  background: transparent;
+  color: #fff;
+  cursor: pointer;
+}
+
+#closeStatusComposer svg {
+  width: 25px;
+  height: 25px;
+}
+
+.status-composer-subtitle {
+  margin: 28px 0;
+  color: #aebac1;
+  font-size: 14px;
+}
+
+.status-create-options {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+}
+
+.status-create-option {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  width: 100%;
+  padding: 20px 5px;
+  border: none;
+  border-bottom: 1px solid #ffffff18;
+  background: transparent;
+  color: #fff;
+  font-size: 16px;
+  text-align: left;
+  cursor: pointer;
+}
+
+.status-option-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  background: #202c33;
+  color: #25d366;
+}
+
+.status-option-icon svg {
+  width: 23px;
+  height: 23px;
+}
+
+.status-create-option:active {
+  background: #202c33;
+}
+
 #addStatusBtn {
   display: none !important;
 }
