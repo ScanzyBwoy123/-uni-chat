@@ -1365,6 +1365,127 @@ cameraCallBtn.addEventListener("click", () => {
 closeCallBtn.addEventListener("click", () => {
   updateActiveCall("ended");
 });
+// ---------------- FULL SCREEN STATUS VIEWER ----------------
+
+let activeStatusList = [];
+let activeStatusIndex = 0;
+let activeStatusOwnerName = "";
+
+async function openStatusViewer(statuses, ownerName) {
+  activeStatusList = [...statuses].sort(
+    (a, b) => new Date(a.created_at) - new Date(b.created_at)
+  );
+
+  activeStatusIndex = 0;
+  activeStatusOwnerName = ownerName;
+
+  document.getElementById("statusViewer").classList.remove("hidden");
+
+  await renderCurrentStatus();
+}
+
+async function renderCurrentStatus() {
+  const viewer = document.getElementById("statusViewer");
+  const content = document.getElementById("statusViewerContent");
+  const name = document.getElementById("statusViewerName");
+  const progress = document.getElementById("statusViewerProgress");
+
+  const status = activeStatusList[activeStatusIndex];
+
+  if (!status) return;
+
+  name.textContent = activeStatusOwnerName;
+  content.replaceChildren();
+  progress.replaceChildren();
+
+  activeStatusList.forEach((item, index) => {
+    const bar = document.createElement("span");
+
+    bar.style.background =
+      index <= activeStatusIndex ? "#25d366" : "#777";
+
+    progress.appendChild(bar);
+  });
+
+  if (status.status_type === "text") {
+    content.textContent = status.text_content || "";
+    content.style.background =
+      status.background_color || "#075e54";
+  } else {
+    content.style.background = "#000";
+
+    const { data, error } = await db
+      .storage
+      .from("status-media")
+      .createSignedUrl(status.media_path, 3600);
+
+    if (error || !data?.signedUrl) {
+      content.textContent = "Unable to load this status.";
+      console.error("Status media error:", error);
+      return;
+    }
+
+    if (status.status_type === "image") {
+      const img = document.createElement("img");
+      img.src = data.signedUrl;
+      img.alt = "Status photo";
+      content.appendChild(img);
+    } else if (status.status_type === "video") {
+      const video = document.createElement("video");
+      video.src = data.signedUrl;
+      video.controls = true;
+      video.autoplay = true;
+      video.playsInline = true;
+      content.appendChild(video);
+    }
+
+    if (status.text_content) {
+      const caption = document.createElement("p");
+      caption.textContent = status.text_content;
+      content.appendChild(caption);
+    }
+  }
+
+  document.getElementById("previousStatusBtn").disabled =
+    activeStatusIndex === 0;
+
+  document.getElementById("nextStatusBtn").disabled =
+    activeStatusIndex === activeStatusList.length - 1;
+
+  if (status.user_id !== currentUser.id) {
+    const { error } = await db
+      .from("status_views")
+      .insert({
+        status_id: status.id,
+        viewer_id: currentUser.id
+      });
+
+    if (error && error.code !== "23505") {
+      console.error("Could not record status view:", error);
+    }
+  }
+}
+
+document.getElementById("closeStatusViewer").addEventListener("click", () => {
+  document.getElementById("statusViewer").classList.add("hidden");
+  document.getElementById("statusViewerContent").replaceChildren();
+});
+
+document.getElementById("previousStatusBtn").addEventListener("click", async () => {
+  if (activeStatusIndex > 0) {
+    activeStatusIndex--;
+    await renderCurrentStatus();
+  }
+});
+
+document.getElementById("nextStatusBtn").addEventListener("click", async () => {
+  if (activeStatusIndex < activeStatusList.length - 1) {
+    activeStatusIndex++;
+    await renderCurrentStatus();
+  }
+});
+
+// ---------------- END STATUS VIEWER ----------------
 // ---------------- LOAD WHATSAPP-STYLE STATUSES ----------------
 
 async function loadStatuses() {
