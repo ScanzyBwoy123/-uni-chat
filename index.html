@@ -332,81 +332,106 @@
 
   </main>
 
-<!-- FULL SCREEN STATUS CREATOR -->
+<!-- WHATSAPP STYLE STATUS CREATOR -->
 <div id="statusComposer" class="status-composer hidden">
 
   <div class="status-composer-box">
 
     <header class="status-composer-header">
       <button id="closeStatusComposer" type="button" aria-label="Back">
-        <svg viewBox="0 0 24 24" aria-hidden="true">
+        <svg viewBox="0 0 24 24">
           <path d="M15 18l-6-6 6-6"
             fill="none" stroke="currentColor"
             stroke-width="2" stroke-linecap="round"
             stroke-linejoin="round"/>
         </svg>
       </button>
-
       <h2>Create status</h2>
     </header>
 
-    <p class="status-composer-subtitle">
-      Share a moment with your contacts
-    </p>
+    <!-- MAIN CHOICES -->
+    <div id="statusChoiceView">
 
-    <div class="status-create-options">
+      <p class="status-composer-subtitle">
+        Share a moment with your contacts
+      </p>
 
-      <button id="textStatusOption" class="status-create-option" type="button">
-        <span class="status-option-icon">
-          <svg viewBox="0 0 24 24" aria-hidden="true">
-            <path d="M4 5h16M12 5v14M8 19h8"
-              fill="none" stroke="currentColor"
-              stroke-width="1.8" stroke-linecap="round"/>
-          </svg>
-        </span>
-        <span>Text</span>
-      </button>
+      <div class="status-create-options">
 
-      <button id="photoStatusOption" class="status-create-option" type="button">
-        <span class="status-option-icon">
-          <svg viewBox="0 0 24 24" aria-hidden="true">
-            <rect x="3" y="5" width="18" height="14" rx="2"
-              fill="none" stroke="currentColor" stroke-width="1.8"/>
-            <circle cx="8.5" cy="10" r="1.5"
-              fill="none" stroke="currentColor" stroke-width="1.8"/>
-            <path d="M21 15l-5-5L5 19"
-              fill="none" stroke="currentColor" stroke-width="1.8"/>
-          </svg>
-        </span>
-        <span>Photo</span>
-      </button>
+        <button id="textStatusOption"
+          class="status-create-option" type="button">
+          <span class="status-option-icon">T</span>
+          <span>Text</span>
+        </button>
 
-      <button id="videoStatusOption" class="status-create-option" type="button">
-        <span class="status-option-icon">
-          <svg viewBox="0 0 24 24" aria-hidden="true">
-            <rect x="3" y="6" width="13" height="12" rx="2"
-              fill="none" stroke="currentColor" stroke-width="1.8"/>
-            <path d="M16 10l5-3v10l-5-3z"
-              fill="none" stroke="currentColor"
-              stroke-width="1.8" stroke-linejoin="round"/>
-          </svg>
-        </span>
-        <span>Video</span>
+        <button id="mediaStatusOption"
+          class="status-create-option" type="button">
+          <span class="status-option-icon">
+            <svg viewBox="0 0 24 24">
+              <rect x="3" y="5" width="18" height="14" rx="2"
+                fill="none" stroke="currentColor" stroke-width="1.8"/>
+              <circle cx="8" cy="10" r="1.5"
+                fill="none" stroke="currentColor" stroke-width="1.8"/>
+              <path d="M21 15l-5-5L5 19"
+                fill="none" stroke="currentColor" stroke-width="1.8"/>
+            </svg>
+          </span>
+          <span>Photo &amp; video</span>
+        </button>
+
+      </div>
+    </div>
+
+    <!-- FULL SCREEN TEXT EDITOR -->
+    <div id="textStatusEditor" class="hidden">
+
+      <div id="textStatusCanvas" class="text-status-canvas">
+
+        <textarea id="textStatusInput"
+          maxlength="700"
+          placeholder="Type a status"
+          aria-label="Write your status"></textarea>
+
+      </div>
+
+      <div class="text-status-toolbar">
+
+        <button id="changeStatusBackground" type="button">
+          Change background
+        </button>
+
+        <button id="postTextStatus" type="button">
+          Post
+        </button>
+
+      </div>
+
+    </div>
+
+    <!-- MEDIA PREVIEW -->
+    <div id="mediaStatusEditor" class="hidden">
+
+      <div id="statusMediaPreview"></div>
+
+      <input id="mediaStatusCaption"
+        type="text"
+        maxlength="150"
+        placeholder="Add a caption">
+
+      <button id="postMediaStatus" type="button">
+        Post
       </button>
 
     </div>
+
   </div>
 </div>
+
+<!-- ONE PICKER FOR BOTH IMAGES AND VIDEOS -->
 <input
   type="file"
   id="statusMediaInput"
-  accept="image/jpeg,image/png,image/webp,video/mp4,video/webm,video/quicktime"
-  hidden
->
-  <input
-  type="file"
-  id="statusMediaInput"
-  accept="image/jpeg,image/png,image/webp,video/mp4,video/webm,video/quicktime"
+  accept="image/*,video/*"
   hidden
 >
 
