@@ -70,6 +70,37 @@ const cancelReplyBtn = document.getElementById("cancelReplyBtn");
 let replyingToMessage = null;
 
 let currentUser = null;
+// ---------------- PROFILE PICTURES ----------------
+
+function getAvatarUrl(path) {
+  if (!path) return null;
+
+  return db.storage
+    .from("profile-pictures")
+    .getPublicUrl(path).data.publicUrl;
+}
+
+function displayMyProfilePhoto(path) {
+  const url = getAvatarUrl(path);
+
+  if (url) {
+    myProfileAvatar.src = url;
+    myProfileAvatar.classList.remove("hidden");
+    myProfileAvatarFallback.classList.add("hidden");
+
+    profilePhotoStatus.textContent = "Your profile picture is set.";
+    changeProfilePhotoBtn.textContent = "Change photo";
+    removeProfilePhotoBtn.classList.remove("hidden");
+  } else {
+    myProfileAvatar.removeAttribute("src");
+    myProfileAvatar.classList.add("hidden");
+    myProfileAvatarFallback.classList.remove("hidden");
+
+    profilePhotoStatus.textContent = "Add a picture to your profile.";
+    changeProfilePhotoBtn.textContent = "Add photo";
+    removeProfilePhotoBtn.classList.add("hidden");
+  }
+}
 let currentConversation = null;
 let realtimeChannel = null;
 let loadedMessageIds = new Set();
