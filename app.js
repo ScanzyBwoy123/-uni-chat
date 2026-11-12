@@ -397,17 +397,22 @@ enableNotificationsBtn.addEventListener("click", async () => {
 
     const subscriptionData = subscription.toJSON();
 
-    const { error } = await db
-      .from("push_subscriptions")
-      .upsert({
-        user_id: currentUser.id,
-        endpoint: subscription.endpoint,
-        p256dh: subscriptionData.keys.p256dh,
-        auth: subscriptionData.keys.auth,
-        updated_at: new Date().toISOString()
-      }, {
-        onConflict: "endpoint"
-      });
+const { data, error } = await db.functions.invoke(
+  "save-push-subscription",
+  {
+    body: {
+      endpoint: subscription.endpoint,
+      p256dh: subscriptionData.keys.p256dh,
+      auth: subscriptionData.keys.auth
+    }
+  }
+);
+
+if (error) throw error;
+
+if (!data?.ok) {
+  throw new Error(data?.error || "Could not save notification subscription.");
+}
 
     if (error) throw error;
 
