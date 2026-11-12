@@ -971,7 +971,9 @@ async function startCall(callType) {
     activeCallId = call.id;
     activeCallType = callType;
     callPartnerId = partner.user_id;
-
+    
+    subscribeToCallStatus();
+    
     callStatus.textContent = "Preparing connection...";
 
     createCallPeerConnection();
