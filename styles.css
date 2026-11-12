@@ -1001,40 +1001,48 @@ MODERN AUDIO AND VIDEO CALL DROPDOWN
   object-fit: cover;
   flex-shrink: 0;
 }
-/* STATUS SECTION */
+/* WHATSAPP-STYLE STATUS UPDATES */
 
 .status-section {
   margin: 18px 0;
-  padding: 15px;
-  background: #ffffff0d;
-  border: 1px solid #ffffff20;
-  border-radius: 16px;
+  padding: 16px;
+  background: #ffffff08;
+  border: 1px solid #ffffff18;
+  border-radius: 18px;
 }
 
 .status-heading {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  gap: 10px;
-  margin-bottom: 14px;
+  margin-bottom: 18px;
 }
 
-.status-heading strong {
-  display: block;
-  font-size: 15px;
+.status-heading h3 {
+  margin: 0;
+  font-size: 18px;
 }
 
-.status-heading small {
-  display: block;
-  margin-top: 4px;
+.status-heading span {
   color: #aaa4bd;
-  font-size: 11px;
+  font-size: 10px;
+}
+
+.status-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 15px;
+}
+
+.status-toolbar strong {
+  font-size: 13px;
 }
 
 #addStatusBtn {
   border: none;
   border-radius: 20px;
-  padding: 9px 13px;
+  padding: 9px 14px;
   background: linear-gradient(100deg, #ff78ad, #c77bdb);
   color: #241329;
   font-size: 12px;
@@ -1043,11 +1051,72 @@ MODERN AUDIO AND VIDEO CALL DROPDOWN
 
 .status-list {
   display: flex;
-  gap: 12px;
-  overflow-x: auto;
+  flex-direction: column;
+  gap: 15px;
+  max-height: 300px;
+  overflow-y: auto;
   padding: 5px 0;
 }
 
-.status-list:empty {
-  display: none;
+.status-item {
+  display: flex;
+  align-items: center;
+  gap: 13px;
+  padding: 7px;
+  border-radius: 13px;
+  cursor: pointer;
+}
+
+.status-ring {
+  width: 58px;
+  height: 58px;
+  flex-shrink: 0;
+  padding: 3px;
+  border-radius: 50%;
+  background: conic-gradient(
+    #25d366,
+    #25d366,
+    #25d366
+  );
+}
+
+.status-ring.status-viewed {
+  background: #777;
+}
+
+.status-avatar {
+  width: 100%;
+  height: 100%;
+  border: 3px solid #211a30;
+  border-radius: 50%;
+  object-fit: cover;
+  background: #493052;
+}
+
+.status-details {
+  flex: 1;
+  min-width: 0;
+}
+
+.status-details strong {
+  display: block;
+  font-size: 13px;
+}
+
+.status-details small {
+  display: block;
+  margin-top: 5px;
+  color: #aaa4bd;
+  font-size: 11px;
+}
+
+.status-add-badge {
+  position: relative;
+}
+
+.status-empty {
+  color: #aaa4bd;
+  font-size: 12px;
+  text-align: center;
+  padding: 15px 5px;
 }
