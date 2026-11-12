@@ -1269,3 +1269,8 @@ MODERN AUDIO AND VIDEO CALL DROPDOWN
     font-size: 24px;
   }
 }
+#mediaStatusEditor {
+  height: auto !important;
+  min-height: 0;
+  flex: 1;
+}
