@@ -48,7 +48,9 @@ const profilePhotoStatus = document.getElementById("profilePhotoStatus");
 const changeProfilePhotoBtn = document.getElementById("changeProfilePhotoBtn");
 const removeProfilePhotoBtn = document.getElementById("removeProfilePhotoBtn");
 const profilePhotoInput = document.getElementById("profilePhotoInput");
-
+// Status controls
+const addStatusBtn = document.getElementById("addStatusBtn");
+const statusList = document.getElementById("statusList");
 // Chat
 const messagesContainer = document.getElementById("messages");
 const messageInput = document.getElementById("messageInput");
