@@ -1548,13 +1548,41 @@ async function loadStatuses() {
     statusList.appendChild(empty);
   }
 }
-// ---------------- STATUS COMPOSER ----------------
+// ---------------- WHATSAPP STATUS COMPOSER ----------------
 
 const statusComposer = document.getElementById("statusComposer");
 const closeStatusComposer = document.getElementById("closeStatusComposer");
+
+const statusChoiceView = document.getElementById("statusChoiceView");
 const textStatusOption = document.getElementById("textStatusOption");
-const photoStatusOption = document.getElementById("photoStatusOption");
-const videoStatusOption = document.getElementById("videoStatusOption");
+const mediaStatusOption = document.getElementById("mediaStatusOption");
+
+const textStatusEditor = document.getElementById("textStatusEditor");
+const textStatusCanvas = document.getElementById("textStatusCanvas");
+const textStatusInput = document.getElementById("textStatusInput");
+const changeStatusBackground = document.getElementById("changeStatusBackground");
+const postTextStatus = document.getElementById("postTextStatus");
+
+const mediaStatusEditor = document.getElementById("mediaStatusEditor");
+const statusMediaInput = document.getElementById("statusMediaInput");
+const statusMediaPreview = document.getElementById("statusMediaPreview");
+const mediaStatusCaption = document.getElementById("mediaStatusCaption");
+const postMediaStatus = document.getElementById("postMediaStatus");
+
+let selectedStatusFile = null;
+let statusPreviewUrl = null;
+let selectedStatusBackground = "#075e54";
+
+const statusBackgrounds = [
+  "#075e54",
+  "#128c7e",
+  "#7b2cbf",
+  "#c2185b",
+  "#1565c0",
+  "#e65100",
+  "#37474f",
+  "#283593"
+];
 
 function openStatusComposer() {
   if (!currentUser) {
@@ -1563,10 +1591,29 @@ function openStatusComposer() {
   }
 
   statusComposer.classList.remove("hidden");
+  statusChoiceView.classList.remove("hidden");
+  textStatusEditor.classList.add("hidden");
+  mediaStatusEditor.classList.add("hidden");
 }
 
 function hideStatusComposer() {
   statusComposer.classList.add("hidden");
+
+  statusChoiceView.classList.remove("hidden");
+  textStatusEditor.classList.add("hidden");
+  mediaStatusEditor.classList.add("hidden");
+
+  textStatusInput.value = "";
+  mediaStatusCaption.value = "";
+
+  selectedStatusFile = null;
+  statusMediaInput.value = "";
+  statusMediaPreview.replaceChildren();
+
+  if (statusPreviewUrl) {
+    URL.revokeObjectURL(statusPreviewUrl);
+    statusPreviewUrl = null;
+  }
 }
 
 addStatusBtn.addEventListener("click", openStatusComposer);
@@ -1579,29 +1626,43 @@ statusComposer.addEventListener("click", event => {
   }
 });
 
-// ---------------- CREATE TEXT STATUS ----------------
+// ---------------- TEXT STATUS EDITOR ----------------
 
-textStatusOption.addEventListener("click", async () => {
+textStatusOption.addEventListener("click", () => {
+  statusChoiceView.classList.add("hidden");
+  textStatusEditor.classList.remove("hidden");
+
+  textStatusInput.focus();
+});
+
+changeStatusBackground.addEventListener("click", () => {
+  const currentIndex = statusBackgrounds.indexOf(
+    selectedStatusBackground
+  );
+
+  selectedStatusBackground =
+    statusBackgrounds[
+      (currentIndex + 1) % statusBackgrounds.length
+    ];
+
+  textStatusCanvas.style.background =
+    selectedStatusBackground;
+});
+
+// ---------------- POST TEXT STATUS ----------------
+
+postTextStatus.addEventListener("click", async () => {
   if (!currentUser) return;
 
-  const content = prompt("What would you like to share?");
-
-  if (content === null) return;
-
-  const text = content.trim();
+  const text = textStatusInput.value.trim();
 
   if (!text) {
-    alert("Please enter some text.");
+    alert("Please type something first.");
     return;
   }
 
-  if (text.length > 700) {
-    alert("Your status cannot exceed 700 characters.");
-    return;
-  }
-
-  textStatusOption.disabled = true;
-  textStatusOption.textContent = "Posting...";
+  postTextStatus.disabled = true;
+  postTextStatus.textContent = "Posting...";
 
   try {
     const { error } = await db
@@ -1609,7 +1670,11 @@ textStatusOption.addEventListener("click", async () => {
       .insert({
         user_id: currentUser.id,
         status_type: "text",
-        text_content: text
+        text_content: text,
+        background_color: selectedStatusBackground,
+        expires_at: new Date(
+          Date.now() + 24 * 60 * 60 * 1000
+        ).toISOString()
       });
 
     if (error) throw error;
@@ -1617,28 +1682,146 @@ textStatusOption.addEventListener("click", async () => {
     hideStatusComposer();
     await loadStatuses();
 
-    alert("Your status has been posted! 💗");
+    alert("Your text status has been posted!");
 
   } catch (error) {
-    console.error("Status posting failed:", error);
+    console.error("Text status error:", error);
     alert("Could not post status: " + error.message);
 
   } finally {
-    textStatusOption.disabled = false;
-    textStatusOption.textContent = "✍️ Text status";
+    postTextStatus.disabled = false;
+    postTextStatus.textContent = "Post";
   }
 });
 
-// ---------------- PHOTO STATUS ----------------
+// ---------------- PHOTO AND VIDEO PICKER ----------------
 
-photoStatusOption.addEventListener("click", () => {
-  alert("Photo status upload will be connected next.");
+mediaStatusOption.addEventListener("click", () => {
+  statusMediaInput.click();
 });
 
-// ---------------- VIDEO STATUS ----------------
+statusMediaInput.addEventListener("change", () => {
+  const file = statusMediaInput.files[0];
 
-videoStatusOption.addEventListener("click", () => {
-  alert("Video status upload will be connected next.");
+  if (!file) return;
+
+  const isImage = file.type.startsWith("image/");
+  const isVideo = file.type.startsWith("video/");
+
+  if (!isImage && !isVideo) {
+    alert("Please select an image or video.");
+    statusMediaInput.value = "";
+    return;
+  }
+
+  if (file.size > 50 * 1024 * 1024) {
+    alert("Your file must be smaller than 50 MB.");
+    statusMediaInput.value = "";
+    return;
+  }
+
+  selectedStatusFile = file;
+
+  if (statusPreviewUrl) {
+    URL.revokeObjectURL(statusPreviewUrl);
+  }
+
+  statusPreviewUrl = URL.createObjectURL(file);
+
+  statusMediaPreview.replaceChildren();
+
+  let preview;
+
+  if (isImage) {
+    preview = document.createElement("img");
+    preview.alt = "Status image preview";
+  } else {
+    preview = document.createElement("video");
+    preview.controls = true;
+    preview.playsInline = true;
+  }
+
+  preview.src = statusPreviewUrl;
+
+  statusMediaPreview.appendChild(preview);
+
+  statusChoiceView.classList.add("hidden");
+  mediaStatusEditor.classList.remove("hidden");
+});
+
+// ---------------- POST PHOTO OR VIDEO STATUS ----------------
+
+postMediaStatus.addEventListener("click", async () => {
+  if (!currentUser || !selectedStatusFile) {
+    alert("Please select an image or video first.");
+    return;
+  }
+
+  const file = selectedStatusFile;
+  const isVideo = file.type.startsWith("video/");
+  const statusType = isVideo ? "video" : "image";
+
+  const extension = file.name.includes(".")
+    ? file.name.split(".").pop().toLowerCase()
+    : (isVideo ? "mp4" : "jpg");
+
+  const filePath =
+    currentUser.id + "/" +
+    Date.now() + "-" +
+    crypto.randomUUID() + "." +
+    extension;
+
+  postMediaStatus.disabled = true;
+  postMediaStatus.textContent = "Uploading...";
+
+  let uploadedPath = null;
+
+  try {
+    const { error: uploadError } = await db.storage
+      .from("status-media")
+      .upload(filePath, file, {
+        contentType: file.type,
+        upsert: false
+      });
+
+    if (uploadError) throw uploadError;
+
+    uploadedPath = filePath;
+
+    const { error: insertError } = await db
+      .from("status_updates")
+      .insert({
+        user_id: currentUser.id,
+        status_type: statusType,
+        media_path: filePath,
+        text_content: mediaStatusCaption.value.trim() || null,
+        expires_at: new Date(
+          Date.now() + 24 * 60 * 60 * 1000
+        ).toISOString()
+      });
+
+    if (insertError) throw insertError;
+
+    hideStatusComposer();
+    await loadStatuses();
+
+    alert("Your status has been posted!");
+
+  } catch (error) {
+    console.error("Media status error:", error);
+
+    if (uploadedPath) {
+      await db.storage
+        .from("status-media")
+        .remove([uploadedPath]);
+    }
+
+    alert("Could not post media status: " + error.message);
+
+  } finally {
+    postMediaStatus.disabled = false;
+    postMediaStatus.textContent = "Post";
+  }
 });
 async function initializeChat(user) {
   if (!user || initializationInProgress) return;
