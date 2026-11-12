@@ -1441,9 +1441,6 @@ async function loadStatuses() {
 
     const row = document.createElement("div");
     row.className = "status-item";
-    if (isMine) {
-  row.addEventListener("click", openStatusComposer);
-}
     const ring = document.createElement("div");
     ring.className = "status-ring";
 
@@ -1490,6 +1487,12 @@ async function loadStatuses() {
 
       ring.style.position = "relative";
       ring.appendChild(badge);
+      badge.style.cursor = "pointer";
+
+badge.addEventListener("click", event => {
+  event.stopPropagation();
+  openStatusComposer();
+});
     }
 
     const details = document.createElement("div");
