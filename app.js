@@ -1117,15 +1117,10 @@ async function updateActiveCall(status) {
       return true;
     }
 
-    callScreen.classList.add("hidden");
-    incomingCallActions.classList.add("hidden");
+    await cleanupCallResources();
 
-    activeCallId = null;
-    activeCallType = null;
-    callPartnerId = null;
-    incomingCall = null;
-
-    callStatus.textContent = "Call ended";
+    callStatus.textContent =
+      status === "declined" ? "Call declined" : "Call ended";
 
     return true;
 
@@ -1135,7 +1130,6 @@ async function updateActiveCall(status) {
     return false;
   }
 }
-
 acceptCallBtn.addEventListener("click", async () => {
   try {
     const updated = await updateActiveCall("accepted");
