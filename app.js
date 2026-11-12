@@ -2081,18 +2081,31 @@ async function initializeChat(user) {
     }
   }
 
-  await runStep(
-    "Profile photo",
-    loadMyProfilePhoto,
-    error => console.warn(error)
-  );
+    // Load independent data at the same time.
+  await Promise.all([
+    runStep(
+      "Profile photo",
+      loadMyProfilePhoto,
+      error => console.warn(error)
+    ),
 
-  await runStep(
-    "Conversations",
-    loadExistingConversations,
-    error => console.warn(error)
-  );
+    runStep(
+      "Conversations",
+      loadExistingConversations,
+      error => console.warn(error)
+    ),
 
+    runStep(
+      "Status updates",
+      loadStatuses,
+      error => {
+        statusList.textContent =
+          "Unable to load updates: " + error.message;
+      }
+    )
+  ]);
+
+  // Load people after conversations to preserve directory ordering.
   await runStep(
     "People directory",
     loadPeople,
@@ -2101,15 +2114,6 @@ async function initializeChat(user) {
       showDirectoryNotice("Directory error: " + error.message);
     }
   );
-
-  await runStep(
-    "Status updates",
-    loadStatuses,
-    error => {
-      statusList.textContent = "Unable to load updates: " + error.message;
-    }
-  );
-
   subscribeToInboxUpdates();
   subscribeToIncomingCalls();
 
