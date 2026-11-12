@@ -1622,7 +1622,19 @@ function hideStatusComposer() {
 }
 
 closeStatusComposer.addEventListener("click", hideStatusComposer);
+createTextStatusBtn.addEventListener("click", () => {
+  if (!currentUser) {
+    alert("Please sign in to create a status.");
+    return;
+  }
 
+  statusComposer.classList.remove("hidden");
+  statusChoiceView.classList.add("hidden");
+  mediaStatusEditor.classList.add("hidden");
+  textStatusEditor.classList.remove("hidden");
+
+  textStatusInput.focus();
+});
 statusComposer.addEventListener("click", event => {
   if (event.target === statusComposer) {
     hideStatusComposer();
