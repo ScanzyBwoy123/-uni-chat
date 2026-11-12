@@ -420,6 +420,21 @@ async function sendPushNotification(messageId) {
     console.warn("Push notification failed:", error);
   }
 }
+async function sendCallPushNotification(callId) {
+  try {
+    const { data, error } = await db.functions.invoke("send-push", {
+      body: {
+        call_id: callId
+      }
+    });
+
+    if (error) throw error;
+
+    console.log("Incoming-call notification:", data);
+  } catch (error) {
+    console.warn("Incoming-call notification failed:", error);
+  }
+}
 // ---------------- VOICE MESSAGES ----------------
 
 let activeRecorder = null;
@@ -1042,11 +1057,12 @@ async function startCall(callType) {
     if (error) throw error;
 
     activeCallId = call.id;
-    activeCallType = callType;
-    callPartnerId = partner.user_id;
-    
-    subscribeToCallStatus();
-    
+activeCallType = callType;
+callPartnerId = partner.user_id;
+
+sendCallPushNotification(call.id);
+
+subscribeToCallStatus();
     callStatus.textContent = "Preparing connection...";
 
     createCallPeerConnection();
