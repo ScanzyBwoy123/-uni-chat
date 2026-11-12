@@ -1151,3 +1151,6 @@ MODERN AUDIO AND VIDEO CALL DROPDOWN
   justify-content: space-between;
   align-items: center;
 }
+#addStatusBtn {
+  display: none !important;
+}
