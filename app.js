@@ -1521,7 +1521,16 @@ badge.addEventListener("click", event => {
 
     row.appendChild(ring);
     row.appendChild(details);
-
+    row.addEventListener("click", () => {
+  if (userStatuses.length > 0) {
+    openStatusViewer(
+      userStatuses,
+      isMine ? "My status" : profile.display_name || "User"
+    );
+  } else if (isMine) {
+    openStatusComposer();
+  }
+});
     return row;
   }
 
