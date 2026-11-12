@@ -1381,6 +1381,7 @@ async function initializeChat(user) {
   peopleList.replaceChildren();
 
   try {
+      await loadMyProfilePhoto();
   await loadExistingConversations();
   await loadPeople();
   subscribeToInboxUpdates();
