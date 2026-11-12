@@ -957,38 +957,20 @@ function subscribeToCallStatus() {
         }
 
         if (
-  call.status === "declined" ||
-  call.status === "ended" ||
-  call.status === "missed"
-) {
-  const finalStatus =
-    call.status === "declined"
-      ? "Call declined"
-      : call.status === "missed"
-        ? "Missed call"
-        : "Call ended";
-
-  await cleanupCallResources();
-
-  callStatus.textContent = finalStatus;
-}
-          callStatus.textContent =
+          call.status === "declined" ||
+          call.status === "ended" ||
+          call.status === "missed"
+        ) {
+          const finalStatus =
             call.status === "declined"
               ? "Call declined"
               : call.status === "missed"
                 ? "Missed call"
                 : "Call ended";
 
-          callScreen.classList.add("hidden");
-          incomingCallActions.classList.add("hidden");
+          await cleanupCallResources();
 
-          activeCallId = null;
-          activeCallType = null;
-          callPartnerId = null;
-          incomingCall = null;
-          pendingCallOffer = null;
-          pendingIceCandidates = [];
-          isCallAccepted = false;
+          callStatus.textContent = finalStatus;
         }
       }
     )
