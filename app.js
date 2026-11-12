@@ -1764,23 +1764,42 @@ async function loadPartnerName() {
 
   if (error || !members) {
     partnerName.textContent = "Private conversation";
+    partnerAvatar.classList.add("hidden");
+    partnerAvatarFallback.classList.remove("hidden");
     return;
   }
 
-  const partner = members.find(member => member.user_id !== currentUser.id);
+  const partner = members.find(
+    member => member.user_id !== currentUser.id
+  );
 
   if (!partner) {
     partnerName.textContent = "Private conversation";
+    partnerAvatar.classList.add("hidden");
+    partnerAvatarFallback.classList.remove("hidden");
     return;
   }
 
   const { data: profile } = await db
     .from("profiles")
-    .select("display_name, username")
+    .select("display_name, username, avatar_path")
     .eq("id", partner.user_id)
     .maybeSingle();
 
-  partnerName.textContent = profile?.display_name || "Your chat partner";
+  partnerName.textContent =
+    profile?.display_name || "Your chat partner";
+
+  const avatarUrl = getAvatarUrl(profile?.avatar_path);
+
+  if (avatarUrl) {
+    partnerAvatar.src = avatarUrl;
+    partnerAvatar.classList.remove("hidden");
+    partnerAvatarFallback.classList.add("hidden");
+  } else {
+    partnerAvatar.removeAttribute("src");
+    partnerAvatar.classList.add("hidden");
+    partnerAvatarFallback.classList.remove("hidden");
+  }
 }
 // ---------------- CUSTOM DELETE CONFIRMATION ----------------
 
