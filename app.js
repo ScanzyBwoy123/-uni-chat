@@ -2630,3 +2630,105 @@ if ("serviceWorker" in navigator) {
       });
   });
 }
+// ---------------- PROFILE PHOTO UPLOAD ----------------
+
+changeProfilePhotoBtn.addEventListener("click", () => {
+  profilePhotoInput.click();
+});
+
+profilePhotoInput.addEventListener("change", async () => {
+  const file = profilePhotoInput.files[0];
+
+  if (!file || !currentUser) return;
+
+  const allowedTypes = [
+    "image/jpeg",
+    "image/png",
+    "image/webp"
+  ];
+
+  if (!allowedTypes.includes(file.type)) {
+    alert("Please choose a JPG, PNG, or WEBP image.");
+    profilePhotoInput.value = "";
+    return;
+  }
+
+  if (file.size > 5 * 1024 * 1024) {
+    alert("Your profile picture must not exceed 5 MB.");
+    profilePhotoInput.value = "";
+    return;
+  }
+
+  changeProfilePhotoBtn.disabled = true;
+  profilePhotoStatus.textContent = "Uploading picture...";
+
+  let newPath = null;
+
+  try {
+    const { data: oldProfile, error: oldProfileError } = await db
+      .from("profiles")
+      .select("avatar_path")
+      .eq("id", currentUser.id)
+      .maybeSingle();
+
+    if (oldProfileError) throw oldProfileError;
+
+    const oldPath = oldProfile?.avatar_path || null;
+
+    const extension = {
+      "image/jpeg": "jpg",
+      "image/png": "png",
+      "image/webp": "webp"
+    }[file.type];
+
+    newPath = `${currentUser.id}/${crypto.randomUUID()}.${extension}`;
+
+    const { error: uploadError } = await db.storage
+      .from("profile-pictures")
+      .upload(newPath, file, {
+        cacheControl: "3600",
+        upsert: false,
+        contentType: file.type
+      });
+
+    if (uploadError) throw uploadError;
+
+    const { error: updateError } = await db
+      .from("profiles")
+      .update({
+        avatar_path: newPath,
+        updated_at: new Date().toISOString()
+      })
+      .eq("id", currentUser.id);
+
+    if (updateError) throw updateError;
+
+    displayMyProfilePhoto(newPath);
+
+    if (oldPath && oldPath.startsWith(`${currentUser.id}/`)) {
+      await db.storage
+        .from("profile-pictures")
+        .remove([oldPath]);
+    }
+
+    await loadPeople();
+
+    alert("Your profile picture has been updated!");
+
+  } catch (error) {
+    console.error("Profile picture upload failed:", error);
+
+    if (newPath) {
+      await db.storage
+        .from("profile-pictures")
+        .remove([newPath]);
+    }
+
+    profilePhotoStatus.textContent = "Upload failed. Please try again.";
+    alert("Could not upload your profile picture. Please try again.");
+
+  } finally {
+    changeProfilePhotoBtn.disabled = false;
+    profilePhotoInput.value = "";
+  }
+});
