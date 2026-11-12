@@ -169,17 +169,34 @@ callPeer.onicecandidate = event => {
   };
 
   callPeer.onconnectionstatechange = () => {
-    console.log("Call connection:", callPeer.connectionState);
+console.log(“Call connection:”, callPeer.connectionState);
 
-    if (callPeer.connectionState === "connected") {
-      callStatus.textContent = "Connected";
-    }
+if (callPeer.connectionState === “connected”) {
+callStatus.textContent = “Connected”;
 
-    if (callPeer.connectionState === "failed") {
-      callStatus.textContent = "Connection failed";
-    }
-  };
+// Start the call timer only once
+if (!callTimerInterval) {
+  callStartedAt = Date.now();
+  callTimerInterval = setInterval(() => {
+    const elapsed = Math.floor(
+      (Date.now() - callStartedAt) / 1000
+    );
+    const minutes = String(
+      Math.floor(elapsed / 60)
+    ).padStart(2, "0");
+    const seconds = String(
+      elapsed % 60
+    ).padStart(2, "0");
+    callTimer.textContent = `${minutes}:${seconds}`;
+  }, 1000);
+}
 
+}
+
+if (callPeer.connectionState === “failed”) {
+callStatus.textContent = “Connection failed”;
+}
+};
   return callPeer;
 }
 
