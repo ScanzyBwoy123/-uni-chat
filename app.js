@@ -132,6 +132,104 @@ let inboxRealtimeChannel = null;
 let inboxRefreshTimer = null;
 let editingMessageId = null;
 let messageActionMenu = null;
+// ---------------- OFFLINE MESSAGE STORAGE ----------------
+
+const OFFLINE_DB_NAME = "uni-chat-local";
+const OFFLINE_DB_VERSION = 1;
+
+function openOfflineDatabase() {
+  return new Promise((resolve, reject) => {
+    const request = indexedDB.open(
+      OFFLINE_DB_NAME,
+      OFFLINE_DB_VERSION
+    );
+
+    request.onupgradeneeded = () => {
+      const database = request.result;
+
+      if (!database.objectStoreNames.contains("messages")) {
+        database.createObjectStore("messages", {
+          keyPath: "cacheKey"
+        });
+      }
+    };
+
+    request.onsuccess = () => resolve(request.result);
+    request.onerror = () => reject(request.error);
+  });
+}
+
+async function saveOfflineMessages(messages) {
+  if (!currentUser || !currentConversation || !messages?.length) {
+    return;
+  }
+
+  const database = await openOfflineDatabase();
+
+  return new Promise((resolve, reject) => {
+    const transaction = database.transaction(
+      "messages",
+      "readwrite"
+    );
+
+    const store = transaction.objectStore("messages");
+
+    messages.forEach(message => {
+      store.put({
+        cacheKey:
+          `${currentUser.id}:${currentConversation}:${message.id}`,
+        userId: currentUser.id,
+        conversationId: currentConversation,
+        message
+      });
+    });
+
+    transaction.oncomplete = () => {
+      database.close();
+      resolve();
+    };
+
+    transaction.onerror = () => {
+      database.close();
+      reject(transaction.error);
+    };
+  });
+}
+
+async function getOfflineMessages(userId, conversationId) {
+  const database = await openOfflineDatabase();
+
+  return new Promise((resolve, reject) => {
+    const transaction = database.transaction(
+      "messages",
+      "readonly"
+    );
+
+    const request = transaction
+      .objectStore("messages")
+      .getAll();
+
+    request.onsuccess = () => {
+      const messages = request.result
+        .filter(item =>
+          item.userId === userId &&
+          item.conversationId === conversationId
+        )
+        .map(item => item.message)
+        .sort((a, b) =>
+          new Date(a.created_at) - new Date(b.created_at)
+        );
+
+      resolve(messages);
+    };
+
+    request.onerror = () => reject(request.error);
+
+    transaction.oncomplete = () => database.close();
+  });
+}
+
+// ---------------- END OFFLINE MESSAGE STORAGE ----------------
 // ---------------- VOICE AND VIDEO CALLING ----------------
 
 const callMenuToggle = document.getElementById("callMenuToggle");
