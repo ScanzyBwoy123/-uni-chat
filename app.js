@@ -1365,14 +1365,14 @@ cameraCallBtn.addEventListener("click", () => {
 closeCallBtn.addEventListener("click", () => {
   updateActiveCall("ended");
 });
-// ---------------- LOAD ACTIVE STATUSES ----------------
+// ---------------- LOAD WHATSAPP-STYLE STATUSES ----------------
 
 async function loadStatuses() {
   if (!currentUser) return;
 
   statusList.replaceChildren();
 
-  const { data, error } = await db
+  const { data: statuses, error } = await db
     .from("status_updates")
     .select("id, user_id, status_type, text_content, created_at, expires_at")
     .gt("expires_at", new Date().toISOString())
@@ -1381,20 +1381,20 @@ async function loadStatuses() {
 
   if (error) {
     console.error("Could not load statuses:", error);
-    statusList.textContent = "Unable to load statuses.";
+    statusList.textContent = "Unable to load updates.";
     return;
   }
 
-  if (!data || data.length === 0) {
-    statusList.textContent = "No status updates yet.";
-    return;
-  }
-
-  const userIds = [...new Set(data.map(status => status.user_id))];
+  const userIds = [
+    ...new Set([
+      currentUser.id,
+      ...(statuses || []).map(status => status.user_id)
+    ])
+  ];
 
   const { data: profiles, error: profileError } = await db
     .from("profiles")
-    .select("id, display_name")
+    .select("id, display_name, avatar_path")
     .in("id", userIds);
 
   if (profileError) {
@@ -1405,29 +1405,146 @@ async function loadStatuses() {
     (profiles || []).map(profile => [profile.id, profile])
   );
 
-  data.forEach(status => {
-    const card = document.createElement("div");
-    card.className = "status-card";
+  const statusIds = (statuses || []).map(status => status.id);
+
+  let viewedStatusIds = new Set();
+
+  if (statusIds.length > 0) {
+    const { data: views, error: viewsError } = await db
+      .from("status_views")
+      .select("status_id")
+      .eq("viewer_id", currentUser.id)
+      .in("status_id", statusIds);
+
+    if (viewsError) {
+      console.error("Could not load status views:", viewsError);
+    } else {
+      viewedStatusIds = new Set(
+        (views || []).map(view => view.status_id)
+      );
+    }
+  }
+
+  const groupedStatuses = new Map();
+
+  (statuses || []).forEach(status => {
+    if (!groupedStatuses.has(status.user_id)) {
+      groupedStatuses.set(status.user_id, []);
+    }
+
+    groupedStatuses.get(status.user_id).push(status);
+  });
+
+  function createStatusRow(userId, isMine = false) {
+    const profile = profileMap.get(userId) || {};
+    const userStatuses = groupedStatuses.get(userId) || [];
+
+    const row = document.createElement("div");
+    row.className = "status-item";
+
+    const ring = document.createElement("div");
+    ring.className = "status-ring";
+
+    const hasUnseen = userStatuses.some(
+      status => !viewedStatusIds.has(status.id)
+    );
+
+    if (!hasUnseen && userStatuses.length > 0) {
+      ring.classList.add("status-viewed");
+    }
+
+    const avatarUrl = getAvatarUrl(profile.avatar_path);
+
+    if (avatarUrl) {
+      const avatar = document.createElement("img");
+      avatar.className = "status-avatar";
+      avatar.src = avatarUrl;
+      avatar.alt = "Profile picture";
+      ring.appendChild(avatar);
+    } else {
+      const fallback = document.createElement("div");
+      fallback.className = "status-avatar";
+      fallback.style.display = "grid";
+      fallback.style.placeItems = "center";
+      fallback.textContent = "♡";
+      ring.appendChild(fallback);
+    }
+
+    if (isMine) {
+      const badge = document.createElement("span");
+      badge.textContent = "+";
+      badge.style.position = "absolute";
+      badge.style.right = "-2px";
+      badge.style.bottom = "-2px";
+      badge.style.width = "22px";
+      badge.style.height = "22px";
+      badge.style.borderRadius = "50%";
+      badge.style.background = "#25d366";
+      badge.style.color = "#fff";
+      badge.style.display = "grid";
+      badge.style.placeItems = "center";
+      badge.style.fontSize = "18px";
+      badge.style.border = "2px solid #211a30";
+
+      ring.style.position = "relative";
+      ring.appendChild(badge);
+    }
+
+    const details = document.createElement("div");
+    details.className = "status-details";
 
     const name = document.createElement("strong");
-    name.textContent =
-      status.user_id === currentUser.id
-        ? "Your status"
-        : profileMap.get(status.user_id)?.display_name || "User";
+    name.textContent = isMine
+      ? "My status"
+      : profile.display_name || "User";
 
-    const content = document.createElement("p");
-    content.textContent =
-      status.status_type === "text"
-        ? status.text_content
-        : status.status_type === "image"
-          ? "📷 Photo status"
-          : "🎬 Video status";
+    const time = document.createElement("small");
 
-    card.appendChild(name);
-    card.appendChild(content);
+    if (userStatuses.length > 0) {
+      time.textContent = new Date(
+        userStatuses[0].created_at
+      ).toLocaleString([], {
+        hour: "2-digit",
+        minute: "2-digit"
+      });
+    } else {
+      time.textContent = "Tap to add status";
+    }
 
-    statusList.appendChild(card);
-  });
+    details.appendChild(name);
+    details.appendChild(time);
+
+    row.appendChild(ring);
+    row.appendChild(details);
+
+    return row;
+  }
+
+  // Always show my status first
+  statusList.appendChild(
+    createStatusRow(currentUser.id, true)
+  );
+
+  const otherUsers = [...groupedStatuses.keys()]
+    .filter(userId => userId !== currentUser.id);
+
+  if (otherUsers.length > 0) {
+    const heading = document.createElement("p");
+    heading.className = "status-empty";
+    heading.textContent = "RECENT UPDATES";
+    statusList.appendChild(heading);
+
+    otherUsers.forEach(userId => {
+      statusList.appendChild(
+        createStatusRow(userId)
+      );
+    });
+  } else {
+    const empty = document.createElement("p");
+    empty.className = "status-empty";
+    empty.textContent = "No recent updates.";
+    statusList.appendChild(empty);
+  }
 }
 // ---------------- CREATE TEXT STATUS ----------------
 
