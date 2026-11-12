@@ -1365,6 +1365,70 @@ cameraCallBtn.addEventListener("click", () => {
 closeCallBtn.addEventListener("click", () => {
   updateActiveCall("ended");
 });
+// ---------------- LOAD ACTIVE STATUSES ----------------
+
+async function loadStatuses() {
+  if (!currentUser) return;
+
+  statusList.replaceChildren();
+
+  const { data, error } = await db
+    .from("status_updates")
+    .select("id, user_id, status_type, text_content, created_at, expires_at")
+    .gt("expires_at", new Date().toISOString())
+    .order("created_at", { ascending: false })
+    .limit(100);
+
+  if (error) {
+    console.error("Could not load statuses:", error);
+    statusList.textContent = "Unable to load statuses.";
+    return;
+  }
+
+  if (!data || data.length === 0) {
+    statusList.textContent = "No status updates yet.";
+    return;
+  }
+
+  const userIds = [...new Set(data.map(status => status.user_id))];
+
+  const { data: profiles, error: profileError } = await db
+    .from("profiles")
+    .select("id, display_name")
+    .in("id", userIds);
+
+  if (profileError) {
+    console.error("Could not load status profiles:", profileError);
+  }
+
+  const profileMap = new Map(
+    (profiles || []).map(profile => [profile.id, profile])
+  );
+
+  data.forEach(status => {
+    const card = document.createElement("div");
+    card.className = "status-card";
+
+    const name = document.createElement("strong");
+    name.textContent =
+      status.user_id === currentUser.id
+        ? "Your status"
+        : profileMap.get(status.user_id)?.display_name || "User";
+
+    const content = document.createElement("p");
+    content.textContent =
+      status.status_type === "text"
+        ? status.text_content
+        : status.status_type === "image"
+          ? "📷 Photo status"
+          : "🎬 Video status";
+
+    card.appendChild(name);
+    card.appendChild(content);
+
+    statusList.appendChild(card);
+  });
+}
 async function initializeChat(user) {
   if (!user || initializationInProgress) return;
 
@@ -1388,6 +1452,7 @@ async function initializeChat(user) {
       await loadMyProfilePhoto();
   await loadExistingConversations();
   await loadPeople();
+  await loadStatuses();
   subscribeToInboxUpdates();
     subscribeToIncomingCalls();
 } catch (error) {
