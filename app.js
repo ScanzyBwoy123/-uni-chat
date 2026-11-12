@@ -101,6 +101,23 @@ function displayMyProfilePhoto(path) {
     removeProfilePhotoBtn.classList.add("hidden");
   }
 }
+// Load the signed-in user's profile picture
+async function loadMyProfilePhoto() {
+  if (!currentUser) return;
+
+  const { data, error } = await db
+    .from("profiles")
+    .select("avatar_path")
+    .eq("id", currentUser.id)
+    .maybeSingle();
+
+  if (error) {
+    console.error("Could not load profile picture:", error);
+    return;
+  }
+
+  displayMyProfilePhoto(data?.avatar_path || null);
+}
 let currentConversation = null;
 let realtimeChannel = null;
 let loadedMessageIds = new Set();
