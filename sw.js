@@ -49,10 +49,11 @@ self.addEventListener("notificationclick", event => {
     self.clients.matchAll({
       type: "window",
       includeUncontrolled: true
-    }).then(clients => {
+    }).then(async clients => {
       for (const client of clients) {
         if (client.url.startsWith(self.location.origin)) {
-          return client.focus();
+          const updatedClient = await client.navigate(targetUrl);
+          return (updatedClient || client).focus();
         }
       }
 
