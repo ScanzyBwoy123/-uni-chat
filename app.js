@@ -1441,7 +1441,9 @@ async function loadStatuses() {
 
     const row = document.createElement("div");
     row.className = "status-item";
-
+    if (isMine) {
+  row.addEventListener("click", openStatusComposer);
+}
     const ring = document.createElement("div");
     ring.className = "status-ring";
 
