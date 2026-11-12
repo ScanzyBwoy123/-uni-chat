@@ -41,6 +41,13 @@ const peopleSearch = document.getElementById("peopleSearch");
 const peopleCount = document.getElementById("peopleCount");
 const peopleList = document.getElementById("peopleList");
 const backToPeopleBtn = document.getElementById("backToPeopleBtn");
+// Profile picture controls
+const myProfileAvatar = document.getElementById("myProfileAvatar");
+const myProfileAvatarFallback = document.getElementById("myProfileAvatarFallback");
+const profilePhotoStatus = document.getElementById("profilePhotoStatus");
+const changeProfilePhotoBtn = document.getElementById("changeProfilePhotoBtn");
+const removeProfilePhotoBtn = document.getElementById("removeProfilePhotoBtn");
+const profilePhotoInput = document.getElementById("profilePhotoInput");
 
 // Chat
 const messagesContainer = document.getElementById("messages");
