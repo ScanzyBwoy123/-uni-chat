@@ -945,7 +945,7 @@ function subscribeToCallStatus() {
         table: "call_sessions",
         filter: "id=eq." + watchedCallId
       },
-      payload => {
+      async payload => {
         const call = payload.new;
 
         if (!call || activeCallId !== watchedCallId) return;
@@ -957,10 +957,21 @@ function subscribeToCallStatus() {
         }
 
         if (
-          call.status === "declined" ||
-          call.status === "ended" ||
-          call.status === "missed"
-        ) {
+  call.status === "declined" ||
+  call.status === "ended" ||
+  call.status === "missed"
+) {
+  const finalStatus =
+    call.status === "declined"
+      ? "Call declined"
+      : call.status === "missed"
+        ? "Missed call"
+        : "Call ended";
+
+  await cleanupCallResources();
+
+  callStatus.textContent = finalStatus;
+}
           callStatus.textContent =
             call.status === "declined"
               ? "Call declined"
