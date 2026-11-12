@@ -967,7 +967,7 @@ document.addEventListener("click", event => {
 // ---------------- CALL ACCEPT, DECLINE AND END ----------------
 
 async function updateActiveCall(status) {
-  if (!activeCallId) return;
+  if (!activeCallId) return false;
 
   try {
     const { error } = await db
@@ -981,7 +981,7 @@ async function updateActiveCall(status) {
       callStatus.textContent = "Call accepted — preparing connection...";
       incomingCallActions.classList.add("hidden");
       incomingCall = null;
-      return;
+      return true;
     }
 
     callScreen.classList.add("hidden");
@@ -993,17 +993,21 @@ async function updateActiveCall(status) {
     incomingCall = null;
 
     callStatus.textContent = "Call ended";
-   return true;
+
+    return true;
+
   } catch (error) {
-  console.error("Call update error:", error);
-  alert("Unable to update call: " + error.message);
-  return false;
-}
+    console.error("Call update error:", error);
+    alert("Unable to update call: " + error.message);
+    return false;
+  }
 }
 
 acceptCallBtn.addEventListener("click", async () => {
   try {
-    await updateActiveCall("accepted");
+    const updated = await updateActiveCall("accepted");
+
+    if (!updated) return;
 
     isCallAccepted = true;
 
