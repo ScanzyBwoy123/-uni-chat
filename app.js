@@ -1374,7 +1374,7 @@ async function loadStatuses() {
 
   const { data: statuses, error } = await db
     .from("status_updates")
-    .select("id, user_id, status_type, text_content, created_at, expires_at")
+    .select("id, user_id, status_type, text_content, media_path, background_color, created_at, expires_at")
     .gt("expires_at", new Date().toISOString())
     .order("created_at", { ascending: false })
     .limit(100);
