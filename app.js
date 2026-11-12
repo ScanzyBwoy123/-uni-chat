@@ -142,13 +142,27 @@ function createCallPeerConnection() {
     ]
   });
 
-  callPeer.onicecandidate = event => {
-    if (event.candidate) {
-      sendCallSignal("ice-candidate", event.candidate.toJSON())
-        .catch(console.error);
-    }
-  };
+callPeer.onicecandidate = event => {
+  if (event.candidate) {
+    const candidate = event.candidate.toJSON();
 
+    console.log("ICE candidate generated:", event.candidate.type);
+
+    sendCallSignal("ice-candidate", candidate)
+      .then(() => {
+        console.log("ICE candidate sent successfully:", event.candidate.type);
+        callStatus.textContent = "Network signal sent";
+      })
+      .catch(error => {
+        console.error("ICE candidate send failed:", error);
+        callStatus.textContent = "Network signal error";
+        alert("Network signal error: " + error.message);
+      });
+
+  } else {
+    console.log("ICE candidate gathering completed.");
+  }
+};  
   callPeer.ontrack = event => {
     remoteVideo.srcObject = event.streams[0];
     remoteVideo.play().catch(console.warn);
