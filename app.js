@@ -2732,3 +2732,63 @@ profilePhotoInput.addEventListener("change", async () => {
     profilePhotoInput.value = "";
   }
 });
+// ---------------- REMOVE PROFILE PHOTO ----------------
+
+removeProfilePhotoBtn.addEventListener("click", async () => {
+  if (!currentUser) return;
+
+  const confirmed = confirm(
+    "Are you sure you want to remove your profile picture?"
+  );
+
+  if (!confirmed) return;
+
+  removeProfilePhotoBtn.disabled = true;
+  profilePhotoStatus.textContent = "Removing picture...";
+
+  try {
+    const { data: profile, error: fetchError } = await db
+      .from("profiles")
+      .select("avatar_path")
+      .eq("id", currentUser.id)
+      .maybeSingle();
+
+    if (fetchError) throw fetchError;
+
+    const oldPath = profile?.avatar_path || null;
+
+    const { error: updateError } = await db
+      .from("profiles")
+      .update({
+        avatar_path: null,
+        updated_at: new Date().toISOString()
+      })
+      .eq("id", currentUser.id);
+
+    if (updateError) throw updateError;
+
+    displayMyProfilePhoto(null);
+
+    if (oldPath && oldPath.startsWith(`${currentUser.id}/`)) {
+      const { error: removeError } = await db.storage
+        .from("profile-pictures")
+        .remove([oldPath]);
+
+      if (removeError) {
+        console.warn("Old profile image could not be deleted:", removeError);
+      }
+    }
+
+    await loadPeople();
+
+    alert("Your profile picture has been removed.");
+
+  } catch (error) {
+    console.error("Profile picture removal failed:", error);
+    profilePhotoStatus.textContent = "Could not remove picture. Try again.";
+    alert("Could not remove your profile picture. Please try again.");
+
+  } finally {
+    removeProfilePhotoBtn.disabled = false;
+  }
+});
