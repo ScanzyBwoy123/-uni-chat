@@ -1288,3 +1288,84 @@ MODERN AUDIO AND VIDEO CALL DROPDOWN
 #createTextStatusBtn:active {
   transform: scale(0.96);
 }
+/* FULL SCREEN STATUS VIEWER */
+
+.status-viewer {
+  position: fixed;
+  inset: 0;
+  z-index: 2000000;
+  display: flex;
+  flex-direction: column;
+  background: #000;
+  color: #fff;
+  padding: 18px;
+  box-sizing: border-box;
+}
+
+.status-viewer.hidden {
+  display: none !important;
+}
+
+.status-viewer-header {
+  display: flex;
+  align-items: center;
+  gap: 15px;
+  min-height: 45px;
+}
+
+.status-viewer-header button {
+  border: none;
+  background: transparent;
+  color: white;
+  font-size: 25px;
+  cursor: pointer;
+}
+
+.status-viewer-progress {
+  display: flex;
+  gap: 4px;
+  margin: 12px 0;
+}
+
+.status-viewer-progress span {
+  height: 3px;
+  flex: 1;
+  border-radius: 5px;
+  background: #777;
+}
+
+.status-viewer-content {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  text-align: center;
+  font-size: 25px;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
+.status-viewer-content img,
+.status-viewer-content video {
+  max-width: 100%;
+  max-height: 75vh;
+  object-fit: contain;
+}
+
+.status-viewer-navigation {
+  display: flex;
+  justify-content: space-between;
+  gap: 20px;
+  padding: 15px 0;
+}
+
+.status-viewer-navigation button {
+  border: none;
+  border-radius: 22px;
+  padding: 12px 22px;
+  background: #25d366;
+  color: #075e35;
+  font-weight: bold;
+  cursor: pointer;
+}
