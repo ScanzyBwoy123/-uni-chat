@@ -1120,114 +1120,119 @@ MODERN AUDIO AND VIDEO CALL DROPDOWN
   text-align: center;
   padding: 15px 5px;
 }
-/* FULL-SCREEN WHATSAPP-STYLE STATUS CREATOR */
+/* WHATSAPP-STYLE TEXT STATUS EDITOR */
 
-.status-composer {
-  position: fixed;
-  inset: 0;
-  z-index: 99999;
+#textStatusEditor,
+#mediaStatusEditor {
   width: 100%;
-  height: 100vh;
-  height: 100dvh;
+  height: calc(100dvh - 130px);
   display: flex;
-  align-items: stretch;
-  justify-content: stretch;
-  padding: 0;
-  background: #0b141a;
+  flex-direction: column;
 }
 
-.status-composer.hidden {
+#textStatusEditor.hidden,
+#mediaStatusEditor.hidden {
   display: none !important;
 }
 
-.status-composer-box {
-  width: 100%;
-  max-width: none;
-  min-height: 100%;
-  padding: 55px 22px 30px;
-  border: none;
-  border-radius: 0;
-  background: #0b141a;
-  box-shadow: none;
-  color: #fff;
-}
-
-.status-composer-header {
-  display: flex;
-  align-items: center;
-  justify-content: flex-start;
-  gap: 22px;
-  padding-bottom: 25px;
-  border-bottom: 1px solid #ffffff18;
-}
-
-.status-composer-header h2 {
-  margin: 0;
-  font-size: 20px;
-  font-weight: 600;
-}
-
-#closeStatusComposer {
-  width: 38px;
-  height: 38px;
-  border: none;
-  background: transparent;
-  color: #fff;
-  cursor: pointer;
-}
-
-#closeStatusComposer svg {
-  width: 25px;
-  height: 25px;
-}
-
-.status-composer-subtitle {
-  margin: 28px 0;
-  color: #aebac1;
-  font-size: 14px;
-}
-
-.status-create-options {
-  display: flex;
-  flex-direction: column;
-  gap: 0;
-}
-
-.status-create-option {
-  display: flex;
-  align-items: center;
-  gap: 20px;
-  width: 100%;
-  padding: 20px 5px;
-  border: none;
-  border-bottom: 1px solid #ffffff18;
-  background: transparent;
-  color: #fff;
-  font-size: 16px;
-  text-align: left;
-  cursor: pointer;
-}
-
-.status-option-icon {
+.text-status-canvas {
+  flex: 1;
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 48px;
-  height: 48px;
-  border-radius: 50%;
+  margin-top: 20px;
+  padding: 25px;
+  border-radius: 12px;
+  background: linear-gradient(135deg, #075e54, #128c7e);
+  transition: background 0.3s ease;
+}
+
+#textStatusInput {
+  width: 100%;
+  min-height: 220px;
+  resize: none;
+  border: none;
+  outline: none;
+  background: transparent;
+  color: #fff;
+  text-align: center;
+  font-size: 27px;
+  line-height: 1.5;
+  font-weight: 500;
+}
+
+#textStatusInput::placeholder {
+  color: #ffffffa0;
+}
+
+.text-status-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 15px;
+  padding: 20px 0;
+}
+
+.text-status-toolbar button,
+#postMediaStatus {
+  border: none;
+  border-radius: 25px;
+  padding: 13px 20px;
+  background: #25d366;
+  color: #075e54;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+#changeStatusBackground {
   background: #202c33;
-  color: #25d366;
+  color: #fff;
 }
 
-.status-option-icon svg {
-  width: 23px;
-  height: 23px;
+#statusMediaPreview {
+  flex: 1;
+  min-height: 250px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  background: #111b21;
+  border-radius: 12px;
+  margin-top: 20px;
 }
 
-.status-create-option:active {
+#statusMediaPreview img,
+#statusMediaPreview video {
+  width: 100%;
+  height: 100%;
+  max-height: 65vh;
+  object-fit: contain;
+}
+
+#mediaStatusCaption {
+  width: 100%;
+  margin: 15px 0;
+  padding: 14px;
+  border: 1px solid #ffffff25;
+  border-radius: 10px;
+  outline: none;
   background: #202c33;
+  color: #fff;
+  font-size: 15px;
 }
 
-#addStatusBtn {
-  display: none !important;
+#postMediaStatus {
+  align-self: flex-end;
+  margin-top: 5px;
+}
+
+@media (max-width: 600px) {
+  .status-composer-box {
+    padding: 45px 16px 20px;
+  }
+
+  #textStatusInput {
+    font-size: 24px;
+  }
 }
