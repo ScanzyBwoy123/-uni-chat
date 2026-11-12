@@ -1667,7 +1667,7 @@ async function initializeChat(user) {
 } catch (error) {
     console.error(error);
     peopleCount.textContent = "Unable to load";
-    showDirectoryNotice("We couldn't load the directory. Please refresh and try again.");
+    showDirectoryNotice("Directory error: " + error.message);
   } finally {
     initializationInProgress = false;
   }
