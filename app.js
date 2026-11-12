@@ -105,6 +105,7 @@ let activeCallId = null;
 let activeCallType = null;
 let callTimerInterval = null;
 let callStartedAt = null;
+let callStatusChannel = null;
 let incomingCall = null;
 let callPartnerId = null;
 let pendingIceCandidates = [];
