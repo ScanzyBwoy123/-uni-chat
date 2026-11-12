@@ -857,64 +857,67 @@ subscribeToCallSignals()
     });
 }
 // –––––––– CALL STATUS SYNCHRONISATION ––––––––
-
 function subscribeToCallStatus() {
-if (!activeCallId) return;
+  if (!activeCallId) return;
 
-if (callStatusChannel) {
-db.removeChannel(callStatusChannel);
-callStatusChannel = null;
-}
-
-const watchedCallId = activeCallId;
-
-callStatusChannel = db
-.channel(“call-status-” + watchedCallId)
-.on(
-“postgres_changes”,
-{
-event: “UPDATE”,
-schema: “public”,
-table: “call_sessions”,
-filter: “id=eq.” + watchedCallId
-},
-payload => {
-const call = payload.new;
-
-    if (!call || activeCallId !== watchedCallId) return;
-    if (call.status === "accepted") {
-      callStatus.textContent = "Call accepted — connecting...";
-      incomingCallActions.classList.add("hidden");
-      return;
-    }
-    if (
-      call.status === "declined" ||
-      call.status === "ended" ||
-      call.status === "missed"
-    ) {
-      callStatus.textContent =
-        call.status === "declined"
-          ? "Call declined"
-          : call.status === "missed"
-            ? "Missed call"
-            : "Call ended";
-      callScreen.classList.add("hidden");
-      incomingCallActions.classList.add("hidden");
-      activeCallId = null;
-      activeCallType = null;
-      callPartnerId = null;
-      incomingCall = null;
-      pendingCallOffer = null;
-      pendingIceCandidates = [];
-      isCallAccepted = false;
-    }
+  if (callStatusChannel) {
+    db.removeChannel(callStatusChannel);
+    callStatusChannel = null;
   }
-)
-.subscribe(status => {
-  console.log("Call status listener:", status);
-});
 
+  const watchedCallId = activeCallId;
+
+  callStatusChannel = db
+    .channel("call-status-" + watchedCallId)
+    .on(
+      "postgres_changes",
+      {
+        event: "UPDATE",
+        schema: "public",
+        table: "call_sessions",
+        filter: "id=eq." + watchedCallId
+      },
+      payload => {
+        const call = payload.new;
+
+        if (!call || activeCallId !== watchedCallId) return;
+
+        if (call.status === "accepted") {
+          callStatus.textContent = "Call accepted — connecting...";
+          incomingCallActions.classList.add("hidden");
+          return;
+        }
+
+        if (
+          call.status === "declined" ||
+          call.status === "ended" ||
+          call.status === "missed"
+        ) {
+          callStatus.textContent =
+            call.status === "declined"
+              ? "Call declined"
+              : call.status === "missed"
+                ? "Missed call"
+                : "Call ended";
+
+          callScreen.classList.add("hidden");
+          incomingCallActions.classList.add("hidden");
+
+          activeCallId = null;
+          activeCallType = null;
+          callPartnerId = null;
+          incomingCall = null;
+          pendingCallOffer = null;
+          pendingIceCandidates = [];
+          isCallAccepted = false;
+        }
+      }
+    )
+    .subscribe(status => {
+      console.log("Call status listener:", status);
+    });
 }
+
 // ---------------- START A CALL ----------------
 
 async function startCall(callType) {
