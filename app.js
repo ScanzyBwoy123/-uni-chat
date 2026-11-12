@@ -1429,6 +1429,54 @@ async function loadStatuses() {
     statusList.appendChild(card);
   });
 }
+// ---------------- CREATE TEXT STATUS ----------------
+
+addStatusBtn.addEventListener("click", async () => {
+  if (!currentUser) return;
+
+  const text = prompt("What would you like to share?");
+
+  if (text === null) return;
+
+  const content = text.trim();
+
+  if (!content) {
+    alert("Please enter some text.");
+    return;
+  }
+
+  if (content.length > 700) {
+    alert("Your status cannot exceed 700 characters.");
+    return;
+  }
+
+  addStatusBtn.disabled = true;
+  addStatusBtn.textContent = "Posting...";
+
+  try {
+    const { error } = await db
+      .from("status_updates")
+      .insert({
+        user_id: currentUser.id,
+        status_type: "text",
+        text_content: content
+      });
+
+    if (error) throw error;
+
+    await loadStatuses();
+
+    alert("Your status has been posted! 💗");
+
+  } catch (error) {
+    console.error("Status posting failed:", error);
+    alert("Could not post status: " + error.message);
+
+  } finally {
+    addStatusBtn.disabled = false;
+    addStatusBtn.textContent = "+ Add status";
+  }
+});
 async function initializeChat(user) {
   if (!user || initializationInProgress) return;
 
