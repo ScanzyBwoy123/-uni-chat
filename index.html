@@ -329,6 +329,39 @@
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="app.js"></script>
+<!-- STATUS COMPOSER -->
+<div id="statusComposer" class="status-composer hidden">
 
+  <div class="status-composer-box">
+
+    <div class="status-composer-header">
+      <h3>Create status</h3>
+      <button id="closeStatusComposer" type="button">✕</button>
+    </div>
+
+    <p>What would you like to share?</p>
+
+    <button id="textStatusOption" type="button">
+      ✍️ Text status
+    </button>
+
+    <button id="photoStatusOption" type="button">
+      📷 Photo status
+    </button>
+
+    <button id="videoStatusOption" type="button">
+      🎬 Video status
+    </button>
+
+  </div>
+
+</div>
+
+<input
+  type="file"
+  id="statusMediaInput"
+  accept="image/jpeg,image/png,image/webp,video/mp4,video/webm,video/quicktime"
+  hidden
+>
 </body>
 </html>
