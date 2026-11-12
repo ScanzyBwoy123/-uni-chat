@@ -1414,7 +1414,26 @@ function createSectionTitle(title) {
 function createPersonCard(profile, buttonText, action, conversation = null) {
   const card = document.createElement("div");
   card.className = "person-card";
+  // Display the user's profile picture
+  const avatarWrap = document.createElement("div");
+  avatarWrap.className = "person-card-avatar-wrap";
 
+  const avatarUrl = getAvatarUrl(profile.avatar_path);
+
+  if (avatarUrl) {
+    const avatar = document.createElement("img");
+    avatar.className = "person-card-avatar";
+    avatar.src = avatarUrl;
+    avatar.alt = "Profile picture";
+    avatarWrap.appendChild(avatar);
+  } else {
+    const fallback = document.createElement("div");
+    fallback.className = "person-card-avatar-fallback";
+    fallback.textContent = "♡";
+    avatarWrap.appendChild(fallback);
+  }
+
+  card.appendChild(avatarWrap);
   if (conversation?.unreadCount > 0) {
     card.classList.add("has-unread");
   }
