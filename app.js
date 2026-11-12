@@ -2772,26 +2772,58 @@ async function handleMessageAction(action, message) {
 // ---------------- MESSAGES ----------------
 
 async function loadMessages() {
+  const conversationId = currentConversation;
+  const userId = currentUser.id;
+
   messagesContainer.replaceChildren();
   loadedMessageIds.clear();
 
+  // First, display messages saved on this device.
+  try {
+    const offlineMessages = await getOfflineMessages(
+      userId,
+      conversationId
+    );
+
+    if (currentConversation !== conversationId) return;
+
+    if (offlineMessages.length) {
+      await Promise.all(
+        offlineMessages.map(message => displayMessage(message))
+      );
+
+      scrollToBottom();
+    }
+  } catch (error) {
+    console.error("Offline message loading failed:", error);
+  }
+
+  // Then try to retrieve the latest messages from Supabase.
   const { data: messages, error } = await db
     .from("messages")
     .select("*")
-    .eq("conversation_id", currentConversation)
+    .eq("conversation_id", conversationId)
     .eq("deleted_for_everyone", false)
     .order("created_at", { ascending: true });
 
+  if (currentConversation !== conversationId) return;
+
   if (error) {
-    showSystemMessage("Unable to load messages.");
-    console.error(error);
+    console.warn("Using saved messages because internet is unavailable:", error);
+
+    if (!loadedMessageIds.size) {
+      showSystemMessage("No saved messages available yet.");
+    }
+
     return;
   }
 
   const { data: hiddenMessages } = await db
     .from("message_user_hides")
     .select("message_id")
-    .eq("user_id", currentUser.id);
+    .eq("user_id", userId);
+
+  if (currentConversation !== conversationId) return;
 
   const hiddenIds = new Set(
     (hiddenMessages || []).map(item => item.message_id)
@@ -2801,21 +2833,37 @@ async function loadMessages() {
     message => !hiddenIds.has(message.id)
   );
 
+  // Save messages locally for future offline access.
+  try {
+    await saveOfflineMessages(visibleMessages);
+  } catch (error) {
+    console.error("Could not save offline messages:", error);
+  }
+
+  if (currentConversation !== conversationId) return;
+
+  // Replace the cached display with the latest server messages.
+  messagesContainer.replaceChildren();
+  loadedMessageIds.clear();
+
   if (!visibleMessages.length) {
     showSystemMessage("Your conversation starts here ❤️");
     return;
   }
-visibleMessages.forEach(displayMessage);
 
-await Promise.all(
-  visibleMessages
-    .filter(message => message.sender_id !== currentUser.id)
-    .map(message => markMessageRead(message.id))
-);
+  await Promise.all(
+    visibleMessages.map(message => displayMessage(message))
+  );
 
-scrollToBottom();
-await refreshInbox();
-  }
+  await Promise.all(
+    visibleMessages
+      .filter(message => message.sender_id !== userId)
+      .map(message => markMessageRead(message.id))
+  );
+
+  scrollToBottom();
+  await refreshInbox();
+}
 function openMediaViewer(url, type) {
   const overlay = document.createElement("div");
   overlay.className = "media-viewer-overlay";
