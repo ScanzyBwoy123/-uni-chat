@@ -995,3 +995,9 @@ MODERN AUDIO AND VIDEO CALL DROPDOWN
   color: white;
   font-size: 25px;
 }
+/* CHAT HEADER PROFILE PICTURE */
+
+.partner-avatar-image {
+  object-fit: cover;
+  flex-shrink: 0;
+}
