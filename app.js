@@ -993,11 +993,12 @@ async function updateActiveCall(status) {
     incomingCall = null;
 
     callStatus.textContent = "Call ended";
-
+   return true;
   } catch (error) {
-    console.error("Call update error:", error);
-    alert("Unable to update call: " + error.message);
-  }
+  console.error("Call update error:", error);
+  alert("Unable to update call: " + error.message);
+  return false;
+}
 }
 
 acceptCallBtn.addEventListener("click", async () => {
