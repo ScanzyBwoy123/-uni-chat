@@ -1555,7 +1555,7 @@ badge.addEventListener("click", event => {
 
 const statusComposer = document.getElementById("statusComposer");
 const closeStatusComposer = document.getElementById("closeStatusComposer");
-
+const createTextStatusBtn = document.getElementById("createTextStatusBtn");
 const statusChoiceView = document.getElementById("statusChoiceView");
 const textStatusOption = document.getElementById("textStatusOption");
 const mediaStatusOption = document.getElementById("mediaStatusOption");
