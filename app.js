@@ -813,11 +813,66 @@ inboxRefreshTimer = null;
 
 let incomingCallChannel = null;
 
-function subscribeToIncomingCalls() {
+async function handleIncomingCall(call) {
+  if (!call || call.status !== "ringing") return;
+  if (call.callee_id !== currentUser.id) return;
+
+  if (activeCallId && activeCallId !== call.id) return;
+
+  incomingCall = call;
+  activeCallId = call.id;
+  activeCallType = call.call_type;
+  callPartnerId = call.caller_id;
+
+  isCallAccepted = false;
+  pendingCallOffer = null;
+  pendingIceCandidates = [];
+
+  subscribeToCallStatus();
+
+  callStatus.textContent =
+    call.call_type === "video"
+      ? "Incoming video call..."
+      : "Incoming voice call...";
+
+  callPersonName.textContent = "Incoming call";
+  callAvatar.textContent = "♡";
+
+  incomingCallActions.classList.remove("hidden");
+  callScreen.classList.remove("hidden");
+
+  await subscribeToCallSignals();
+
+  const { data: offerSignal, error } = await db
+    .from("call_signals")
+    .select("payload")
+    .eq("call_id", call.id)
+    .eq("recipient_id", currentUser.id)
+    .eq("signal_type", "offer")
+    .order("created_at", { ascending: true })
+    .limit(1)
+    .maybeSingle();
+
+  if (error) throw error;
+
+  if (activeCallId !== call.id) return;
+
+  if (offerSignal && !pendingCallOffer) {
+    pendingCallOffer = offerSignal.payload;
+    callStatus.textContent = "Incoming call — tap Accept";
+
+    if (isCallAccepted) {
+      await acceptIncomingWebRTCCall();
+    }
+  }
+}
+
+async function subscribeToIncomingCalls() {
   if (!currentUser) return;
 
   if (incomingCallChannel) {
-    db.removeChannel(incomingCallChannel);
+    await db.removeChannel(incomingCallChannel);
+    incomingCallChannel = null;
   }
 
   incomingCallChannel = db
@@ -831,61 +886,49 @@ function subscribeToIncomingCalls() {
         filter: "callee_id=eq." + currentUser.id
       },
       payload => {
-        const call = payload.new;
-
-        if (!call || call.status !== "ringing") return;
-
-incomingCall = call;
-activeCallId = call.id;
-activeCallType = call.call_type;
-callPartnerId = call.caller_id;
-
-subscribeToCallStatus();
-        
-isCallAccepted = false;
-pendingCallOffer = null;
-pendingIceCandidates = [];
-subscribeToCallSignals()
-  .then(async () => {
-    const { data: offerSignal, error } = await db
-      .from("call_signals")
-      .select("payload")
-      .eq("call_id", activeCallId)
-      .eq("recipient_id", currentUser.id)
-      .eq("signal_type", "offer")
-      .order("created_at", { ascending: true })
-      .limit(1)
-      .maybeSingle();
-
-    if (error) throw error;
-
-    if (!offerSignal || pendingCallOffer) return;
-
-    pendingCallOffer = offerSignal.payload;
-    callStatus.textContent = "Incoming call — tap Accept";
-
-    if (isCallAccepted) {
-      await acceptIncomingWebRTCCall();
-    }
-  })
-  .catch(error => {
-    console.error("Unable to recover incoming call offer:", error);
-  });
-        callStatus.textContent =
-          call.call_type === "video"
-            ? "Incoming video call..."
-            : "Incoming voice call...";
-
-        callPersonName.textContent = "Incoming call";
-        callAvatar.textContent = "♡";
-
-        incomingCallActions.classList.remove("hidden");
-        callScreen.classList.remove("hidden");
+        handleIncomingCall(payload.new).catch(error => {
+          console.error("Incoming call setup failed:", error);
+        });
       }
     )
     .subscribe(status => {
       console.log("Incoming call listener:", status);
     });
+
+  // Recover a call that was created while the app was closed.
+  const params = new URLSearchParams(window.location.search);
+  const notificationCallId = params.get("incoming_call");
+
+  let query = db
+    .from("call_sessions")
+    .select("*")
+    .eq("callee_id", currentUser.id)
+    .eq("status", "ringing");
+
+  if (notificationCallId) {
+    query = query.eq("id", notificationCallId);
+  }
+
+  const { data: pendingCalls, error } = await query
+    .order("created_at", { ascending: false })
+    .limit(1);
+
+  if (error) {
+    console.error("Unable to recover pending call:", error);
+    return;
+  }
+
+  if (pendingCalls && pendingCalls.length > 0) {
+    await handleIncomingCall(pendingCalls[0]);
+
+    if (notificationCallId) {
+      window.history.replaceState(
+        {},
+        document.title,
+        window.location.pathname
+      );
+    }
+  }
 }
 // ---------------- CALL RESOURCE CLEANUP ----------------
 
