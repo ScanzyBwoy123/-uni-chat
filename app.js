@@ -556,7 +556,7 @@ voiceRecordBtn.addEventListener("click", async () => {
       }
       recordingStatus.classList.add("hidden");
       // Return button to idle appearance
-      voiceRecordBtn.textContent = "▶";
+      voiceRecordBtn.textContent ="▶";
       voiceRecordBtn.classList.remove("is-recording");
       const blob = new Blob(audioChunks, {
         type: activeRecorder?.mimeType || "audio/webm"
@@ -1238,6 +1238,33 @@ declineCallBtn.addEventListener("click", () => {
 
 endCallBtn.addEventListener("click", () => {
   updateActiveCall("ended");
+});
+// ---------------- MICROPHONE MUTE CONTROL ----------------
+
+muteCallBtn.addEventListener("click", () => {
+  if (!callStream) {
+    alert("Microphone is not available.");
+    return;
+  }
+
+  const audioTracks = callStream.getAudioTracks();
+
+  if (audioTracks.length === 0) {
+    alert("No microphone track found.");
+    return;
+  }
+
+  isMicrophoneMuted = !isMicrophoneMuted;
+
+  audioTracks.forEach(track => {
+    track.enabled = !isMicrophoneMuted;
+  });
+
+  muteCallBtn.textContent = isMicrophoneMuted ? "🔇" : "🎤";
+
+  muteCallBtn.title = isMicrophoneMuted
+    ? "Unmute microphone"
+    : "Mute microphone";
 });
 
 closeCallBtn.addEventListener("click", () => {
