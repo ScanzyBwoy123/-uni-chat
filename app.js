@@ -1594,9 +1594,11 @@ function openStatusComposer() {
   }
 
   statusComposer.classList.remove("hidden");
-  statusChoiceView.classList.remove("hidden");
+  statusChoiceView.classList.add("hidden");
   textStatusEditor.classList.add("hidden");
-  mediaStatusEditor.classList.add("hidden");
+  mediaStatusEditor.classList.remove("hidden");
+
+  statusMediaInput.click();
 }
 
 function hideStatusComposer() {
@@ -1618,8 +1620,6 @@ function hideStatusComposer() {
     statusPreviewUrl = null;
   }
 }
-
-addStatusBtn.addEventListener("click", openStatusComposer);
 
 closeStatusComposer.addEventListener("click", hideStatusComposer);
 
