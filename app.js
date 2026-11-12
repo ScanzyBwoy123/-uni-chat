@@ -1645,32 +1645,63 @@ async function initializeChat(user) {
   currentUser = user;
   currentConversation = null;
 
-    setComposerEnabled(false);
+  setComposerEnabled(false);
 
-  // Hide login and registration after successful sign-in
   authView.classList.add("hidden");
-
-  // Display the main application
   appView.classList.remove("hidden");
   showDirectory();
 
   peopleCount.textContent = "Loading...";
   peopleList.replaceChildren();
+  statusList.textContent = "Loading updates...";
 
-  try {
-      await loadMyProfilePhoto();
-  await loadExistingConversations();
-  await loadPeople();
-  await loadStatuses();
-  subscribeToInboxUpdates();
-    subscribeToIncomingCalls();
-} catch (error) {
-    console.error(error);
-    peopleCount.textContent = "Unable to load";
-    showDirectoryNotice("Directory error: " + error.message);
-  } finally {
-    initializationInProgress = false;
+  async function runStep(name, task, onError) {
+    try {
+      await Promise.race([
+        task(),
+        new Promise((_, reject) =>
+          setTimeout(() => reject(new Error(name + " timed out")), 15000)
+        )
+      ]);
+    } catch (error) {
+      console.error(name + " error:", error);
+      onError(error);
+    }
   }
+
+  await runStep(
+    "Profile photo",
+    loadMyProfilePhoto,
+    error => console.warn(error)
+  );
+
+  await runStep(
+    "Conversations",
+    loadExistingConversations,
+    error => console.warn(error)
+  );
+
+  await runStep(
+    "People directory",
+    loadPeople,
+    error => {
+      peopleCount.textContent = "Unable to load";
+      showDirectoryNotice("Directory error: " + error.message);
+    }
+  );
+
+  await runStep(
+    "Status updates",
+    loadStatuses,
+    error => {
+      statusList.textContent = "Unable to load updates: " + error.message;
+    }
+  );
+
+  subscribeToInboxUpdates();
+  subscribeToIncomingCalls();
+
+  initializationInProgress = false;
 }
 
 // ---------------- DIRECTORY ----------------
