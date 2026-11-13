@@ -15,3 +15,74 @@
 .call-top{display:flex;align-items:center;justify-content:space-between;gap:12px}.call-top strong{display:block;font-size:16px}.call-top small{display:block;margin-top:5px;color:#c2d4c9;font-size:12px}.call-top>span{font-variant-numeric:tabular-nums;color:#d8e5dd;font-size:13px}
 .call-stage{position:relative;flex:1;min-height:0;display:grid;place-items:center;padding:20px 0}.call-avatar{width:112px;height:112px;border-radius:50%;background:#d8eee1;color:#17613e;display:grid;place-items:center;font-size:40px;font-weight:800;box-shadow:0 0 0 12px #ffffff0c}.call-stage #remoteVideo{width:100%;height:100%;max-height:calc(100dvh - 240px);object-fit:contain;border-radius:18px;background:#0a100d}.call-stage #localVideo{position:absolute;right:0;bottom:20px;width:min(28vw,150px);aspect-ratio:3/4;object-fit:cover;border:2px solid #ffffffa0;border-radius:14px;background:#17251d}.call-stage #remoteAudio{display:none}.call-controls{display:flex;justify-content:center;align-items:center;gap:18px;padding:16px}.call-controls button{width:54px;height:54px;border:0;border-radius:50%;display:grid;place-items:center;background:#ffffff20;color:#fff}.call-controls svg{width:22px;height:22px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}.call-controls .call-end{background:#d83e4d}.call-controls button.is-off{background:#ffffff45}.call-minimize{align-self:center;border:0;background:transparent;color:#d1ded5;padding:8px 14px;font-size:12px}.incoming-call-actions{display:flex;justify-content:center;gap:18px;padding:12px}.incoming-call-actions button{border:0;border-radius:24px;padding:13px 24px;color:#fff;font-weight:700}.call-decline{background:#c83f4b}.call-accept{background:#168b58}.call-history-list{padding:8px 12px}.call-history-item{display:flex;align-items:center;gap:12px;padding:13px 10px;border-bottom:1px solid var(--line)}.call-history-icon{width:40px;height:40px;border-radius:50%;display:grid;place-items:center;background:#eaf5ee;color:var(--green)}.call-history-copy{flex:1;min-width:0}.call-history-copy strong{display:block;font-size:12px}.call-history-copy small{display:block;color:#87948b;font-size:10px;margin-top:4px}.call-history-meta{font-size:10px;color:#89958e;text-align:right}
 @media(max-width:650px){.call-screen{padding-left:18px;padding-right:18px}.call-stage #localVideo{width:112px}.call-controls{gap:14px}.call-controls button{width:52px;height:52px}}
+/* Fix missing message composer on iPhone */
+.chat-active {
+  min-height: 0;
+  overflow: hidden;
+}
+
+.messages {
+  min-height: 0;
+  min-width: 0;
+}
+
+.composer {
+  flex: 0 0 auto;
+  flex-shrink: 0;
+  position: relative;
+  z-index: 3;
+}
+
+@media (max-width: 650px) {
+  .conversation-area.mobile-open {
+    display: block;
+    overflow: hidden;
+  }
+
+  .chat-active {
+    height: 100%;
+    min-height: 0;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+  }
+
+  .chat-active .chat-head {
+    flex: 0 0 62px;
+  }
+
+  .chat-active .messages {
+    flex: 1 1 0%;
+    min-height: 0;
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .chat-active .composer {
+    display: flex;
+    flex: 0 0 auto;
+    min-height: 58px;
+    width: 100%;
+    padding: 9px 8px calc(9px + env(safe-area-inset-bottom, 0px));
+    gap: 4px;
+    background: #fff;
+  }
+
+  .chat-active .composer input[type="text"] {
+    display: block;
+    flex: 1 1 auto;
+    min-width: 0;
+    width: 0;
+    font-size: 16px;
+  }
+
+  .chat-active .composer-icon,
+  .chat-active .send-button {
+    display: grid;
+    flex-shrink: 0;
+  }
+
+  .chat-active .recording-status {
+    flex: 0 0 auto;
+  }
+}
