@@ -430,6 +430,40 @@ async function deleteMessageForEveryone(message) {
   async function enableNotifications(){if(!state.user){toast("Sign in before enabling notifications.");return;}if(!("Notification"in window)||!("serviceWorker"in navigator)||!("PushManager"in window)){toast("Push notifications are not supported in this browser.");return;}const buttons=[$("enableNotificationsBtn"),$("openNotificationSettings")].filter(Boolean);buttons.forEach(b=>b.disabled=true);try{const permission=await Notification.requestPermission();if(permission!=="granted")throw new Error("Notification permission was not granted.");const registration=await navigator.serviceWorker.ready;let subscription=await registration.pushManager.getSubscription();if(!subscription){subscription=await registration.pushManager.subscribe({userVisibleOnly:true,applicationServerKey:urlBase64ToUint8Array(VAPID_PUBLIC_KEY)});}const json=subscription.toJSON();if(!subscription.endpoint||!json.keys?.p256dh||!json.keys?.auth)throw new Error("The browser returned an incomplete push subscription.");const {data,error}=await db.functions.invoke("save-push-subscription",{body:{endpoint:subscription.endpoint,p256dh:json.keys.p256dh,auth:json.keys.auth}});if(error)throw error;if(!data?.ok)throw new Error(data?.error||"The server did not confirm saving this device.");toast("Push notifications are enabled on this device.");}catch(e){toast("Could not enable notifications: "+errorText(e));}finally{buttons.forEach(b=>b.disabled=false);}}
   function switchSection(section){document.querySelectorAll("[data-section]").forEach(b=>b.classList.toggle("active",b.dataset.section===section));$("sectionHeading").textContent=({chats:"Chats",updates:"Updates",calls:"Calls",settings:"Settings"})[section];$("sectionCaption").textContent=({chats:"Your conversations, all in one place",updates:"Moments from your people",calls:"Your recent calls",settings:"Your account and preferences"})[section];["peoplePanel","updatesPanel","callsPanel","settingsPanel"].forEach(id=>$(id).classList.add("hidden"));({chats:"peoplePanel",updates:"updatesPanel",calls:"callsPanel",settings:"settingsPanel"})[section]&&$(({chats:"peoplePanel",updates:"updatesPanel",calls:"callsPanel",settings:"settingsPanel"})[section]).classList.remove("hidden");if(section==="updates")loadStatuses().catch(e=>console.warn(e));if(section==="calls")loadCallHistory().catch(e=>console.warn(e));if(section==="chats")renderPeople();}
   function subscribeInbox(){if(state.inboxChannel)db.removeChannel(state.inboxChannel);state.inboxChannel=db.channel("inbox-"+state.user.id).on("postgres_changes",{event:"INSERT",schema:"public",table:"messages"},payload=>{const m=payload.new;if(m.sender_id!==state.user.id&&m.conversation_id!==state.conversation){toast("New message received.");}loadConversations().catch(()=>{});}).subscribe();}
+   async function updateLastSeen(){
+  if(!state.user)return;
+  const {error}=await db.from("profiles")
+    .update({last_seen_at:new Date().toISOString()})
+    .eq("id",state.user.id);
+  if(error)console.warn("Last seen update failed:",error);
+}
+
+async function startPresence(){
+  if(!state.user)return;
+
+  await updateLastSeen();
+
+  state.presenceChannel=db.channel("uni-presence",{
+    config:{presence:{key:state.user.id}}
+  });
+
+  state.presenceChannel
+    .on("presence",{event:"sync"},()=>{
+      const presence=state.presenceChannel.presenceState();
+      state.onlineUsers=new Set(Object.keys(presence));
+      renderPeople();
+    })
+    .subscribe(async status=>{
+      if(status==="SUBSCRIBED"){
+        await state.presenceChannel.track({
+          user_id:state.user.id,
+          online_at:new Date().toISOString()
+        });
+      }
+    });
+
+  state.presenceTimer=setInterval(updateLastSeen,30000);
+}
   async function initialize(user){if(!user||!db)return;if(state.initializedUserId===user.id)return;state.initializedUserId=user.id;state.user=user;ui.auth.classList.add("hidden");ui.app.classList.remove("hidden");$("mobileNav").classList.remove("hidden");switchSection("chats");try{await loadMyProfile();await loadPeople();await loadConversations();await loadStatuses();subscribeInbox();subscribeToIncomingCalls().catch(e=>console.warn("Incoming call setup:",e));loadCallHistory().catch(e=>console.warn("Call history:",e));setComposerEnabled(false);}catch(e){state.initializedUserId=null;console.error(e);toast("Some account data could not be loaded: "+errorText(e));}}
   function bindEvents(){
      $("cancelReplyBtn").addEventListener("click", cancelReply);
