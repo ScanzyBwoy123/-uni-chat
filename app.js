@@ -8,7 +8,29 @@
     auth: { persistSession: true, autoRefreshToken: true, detectSessionInUrl: true }
   });
   const $ = id => document.getElementById(id);
-  const state = { user:null, profile:null, people:[], conversations:[], conversation:null, partner:null, messageChannel:null, inboxChannel:null, statusChannel:null, loaded:new Set(), statusGroups:new Map(), activeStatuses:[], activeStatusIndex:0, selectedFile:null, previewUrl:null, recorder:null, stream:null, chunks:[], statusColor:"#087f5b", avatarUrl:null };
+  const state = {
+  user: null,
+  profile: null,
+  people: [],
+  conversations: [],
+  conversation: null,
+  partner: null,
+  messageChannel: null,
+  inboxChannel: null,
+  statusChannel: null,
+  loaded: new Set(),
+  statusGroups: new Map(),
+  activeStatuses: [],
+  activeStatusIndex: 0,
+  selectedFile: null,
+  previewUrl: null,
+  recorder: null,
+  stream: null,
+  chunks: [],
+  replyTo: null,
+  statusColor: "#087f5b",
+  avatarUrl: null
+};
   const callState = { id:null, type:null, partnerId:null, peer:null, stream:null, signals:null, status:null, incoming:null, offer:null, ice:[], accepted:false, muted:false, camera:true, timer:null, startedAt:null, incomingChannel:null, history:[] };
   const VAPID_PUBLIC_KEY = "BCKiDBhZsdtjkWRAoNZDYb-JCqRDu8v3xjWSueeAmHymIzeYbBqU3BSVoJ6-C8GBqoEpTVzNlR7-72Bu_-gKcUc";
   const ui = {
@@ -40,11 +62,148 @@
   async function fetchProfileFromConversation(id){const {data:members}=await db.from("conversation_members").select("user_id").eq("conversation_id",id);const other=members?.find(m=>m.user_id!==state.user.id);return other?fetchProfile(other.user_id):null;}
   async function loadMessages(){const {data,error}=await db.from("messages").select("*").eq("conversation_id",state.conversation).eq("deleted_for_everyone",false).order("created_at",{ascending:true});if(error){renderSystem("Unable to load messages.");toast(errorText(error));return;}const {data:hidden}=await db.from("message_user_hides").select("message_id").eq("user_id",state.user.id);const hiddenIds=new Set((hidden||[]).map(x=>x.message_id));const visible=(data||[]).filter(m=>!hiddenIds.has(m.id));ui.messages.replaceChildren();if(!visible.length)renderSystem("Your conversation starts here.");visible.forEach(renderMessage);saveOfflineMessages(visible).catch(()=>{});scrollBottom();}
   function renderSystem(text){const el=document.createElement("div");el.className="system-message";el.textContent=text;ui.messages.append(el);}
+   function startReply(message) {
+  state.replyTo = message;
+
+  const preview = $("replyPreview");
+  const previewText = $("replyPreviewText");
+
+  const text =
+    message.body ||
+    (message.message_type === "image" ? "📷 Photo" :
+    message.message_type === "video" ? "🎥 Video" :
+    message.message_type === "voice" ? "🎤 Voice message" :
+    "Attachment");
+
+  previewText.textContent = text;
+  preview.classList.remove("hidden");
+  ui.message.focus();
+}
+
+function cancelReply() {
+  state.replyTo = null;
+  $("replyPreview").classList.add("hidden");
+  $("replyPreviewText").textContent = "";
+}
   async function mediaSignedUrl(path){if(!path)return null;const {data,error}=await db.storage.from("chat-media").createSignedUrl(path,3600);if(error)throw error;return data.signedUrl;}
-  async function renderMessage(message){if(!message?.id||state.loaded.has(message.id))return;state.loaded.add(message.id);const wrap=document.createElement("article");wrap.className="message "+(message.sender_id===state.user.id?"sent":"received");if(message.message_type==="voice"&&message.attachment_path){const audio=document.createElement("audio");audio.controls=true;try{audio.src=await mediaSignedUrl(message.attachment_path);}catch{audio.textContent="Voice message unavailable";}wrap.append(audio);}else if((message.message_type==="image"||message.message_type==="video")&&message.attachment_path){try{const url=await mediaSignedUrl(message.attachment_path);if(message.message_type==="image"){const img=document.createElement("img");img.src=url;img.alt="Shared image";wrap.append(img);}else{const video=document.createElement("video");video.src=url;video.controls=true;video.playsInline=true;wrap.append(video);}}catch{const p=document.createElement("span");p.textContent="Attachment unavailable";wrap.append(p);}}else{const body=document.createElement("div");body.textContent=message.body||"Attachment";wrap.append(body);}const time=document.createElement("small");time.className="message-time";time.textContent=new Date(message.created_at).toLocaleTimeString([],{hour:"2-digit",minute:"2-digit"});wrap.append(time);ui.messages.append(wrap);scrollBottom();}
+ async function renderMessage(message) {
+  if (!message?.id || state.loaded.has(message.id)) return;
+  state.loaded.add(message.id);
+  const wrap = document.createElement("article");
+
+wrap.className = "message " + (
+  message.sender_id === state.user.id ? "sent" : "received"
+);
+
+if (message.reply_to_message_id) {
+  const { data: original } = await db
+    .from("messages")
+    .select("id, body, message_type, sender_id")
+    .eq("id", message.reply_to_message_id)
+    .eq("conversation_id", state.conversation)
+    .maybeSingle();
+
+  if (original) {
+    const quote = document.createElement("div");
+    quote.className = "reply-quote";
+
+    const label = document.createElement("strong");
+    label.textContent =
+      original.sender_id === state.user.id
+        ? "You"
+        : "Replied message";
+
+    const text = document.createElement("div");
+    text.textContent =
+      original.body ||
+      ({
+        image: "📷 Photo",
+        video: "🎥 Video",
+        voice: "🎤 Voice message"
+      }[original.message_type] || "Attachment");
+
+    quote.append(label, text);
+    wrap.append(quote);
+  }
+}
+  if (message.message_type === "voice" && message.attachment_path) {
+    const audio = document.createElement("audio");
+    audio.controls = true;
+    try {
+      audio.src = await mediaSignedUrl(message.attachment_path);
+    } catch {
+      audio.textContent = "Voice message unavailable";
+    }
+    wrap.append(audio);
+  } else if (
+    (message.message_type === "image" ||
+     message.message_type === "video") &&
+    message.attachment_path
+  ) {
+    try {
+      const url = await mediaSignedUrl(message.attachment_path);
+      if (message.message_type === "image") {
+        const img = document.createElement("img");
+        img.src = url;
+        img.alt = "Shared image";
+        wrap.append(img);
+      } else {
+        const video = document.createElement("video");
+        video.src = url;
+        video.controls = true;
+        video.playsInline = true;
+        wrap.append(video);
+      }
+    } catch {
+      const p = document.createElement("span");
+      p.textContent = "Attachment unavailable";
+      wrap.append(p);
+    }
+  } else {
+    const body = document.createElement("div");
+    body.textContent = message.body || "Attachment";
+    wrap.append(body);
+  }
+  const time = document.createElement("small");
+  time.className = "message-time";
+  time.textContent = new Date(message.created_at).toLocaleTimeString(
+    [],
+    { hour: "2-digit", minute: "2-digit" }
+  );
+  wrap.append(time);
+  const replyButton = document.createElement("button");
+  replyButton.type = "button";
+  replyButton.className = "message-reply-btn";
+  replyButton.textContent = "↩ Reply";
+  replyButton.addEventListener("click", () => {
+    startReply(message);
+  });
+  wrap.append(replyButton);
+  ui.messages.append(wrap);
+  scrollBottom();
+} 
   function scrollBottom(){ui.messages.scrollTop=ui.messages.scrollHeight;}
   function subscribeMessages(id){state.messageChannel=db.channel("private-chat-"+id).on("postgres_changes",{event:"INSERT",schema:"public",table:"messages",filter:"conversation_id=eq."+id},payload=>{if(state.conversation===id){renderMessage(payload.new);loadConversations().catch(()=>{});}}).subscribe(status=>{$("connectionStatus").textContent=status==="SUBSCRIBED"?"Connected":status==="CHANNEL_ERROR"?"Connection problem":"Connecting…";});}
-  async function sendTextMessage(body){const {data,error}=await db.from("messages").insert({conversation_id:state.conversation,sender_id:state.user.id,body,message_type:"text"}).select().single();if(error)throw error;renderMessage(data);loadConversations().catch(()=>{});notifySend(data.id);}
+  async function sendTextMessage(body) {
+  const { data, error } = await db
+    .from("messages")
+    .insert({
+      conversation_id: state.conversation,
+      sender_id: state.user.id,
+      body,
+      message_type: "text",
+      reply_to_message_id: state.replyTo?.id || null
+    })
+    .select()
+    .single();
+
+  if (error) throw error;
+
+  cancelReply();
+  renderMessage(data);
+  loadConversations().catch(() => {});
+  notifySend(data.id);
+}
   async function notifySend(id){try{await db.functions.invoke("send-push",{body:{message_id:id}});}catch(e){console.warn("Push send unavailable",e);}}
   async function sendAttachment(file,type){if(file.size>50*1024*1024)throw new Error("File must be smaller than 50 MB.");const ext=(file.name.split(".").pop()||"bin").toLowerCase();const path=`${state.conversation}/${state.user.id}/${crypto.randomUUID()}.${ext}`;const {error:uploadError}=await db.storage.from("chat-media").upload(path,file,{contentType:file.type,upsert:false});if(uploadError)throw uploadError;const {data,error}=await db.from("messages").insert({conversation_id:state.conversation,sender_id:state.user.id,message_type:type,body:null,attachment_path:path}).select().single();if(error){await db.storage.from("chat-media").remove([path]);throw error;}renderMessage(data);notifySend(data.id);}
   async function openOfflineDB(){return new Promise((resolve,reject)=>{const req=indexedDB.open("uni-chat-local",1);req.onupgradeneeded=()=>{if(!req.result.objectStoreNames.contains("messages"))req.result.createObjectStore("messages",{keyPath:"cacheKey"});};req.onsuccess=()=>resolve(req.result);req.onerror=()=>reject(req.error);});}
@@ -69,48 +228,9 @@
   function subscribeInbox(){if(state.inboxChannel)db.removeChannel(state.inboxChannel);state.inboxChannel=db.channel("inbox-"+state.user.id).on("postgres_changes",{event:"INSERT",schema:"public",table:"messages"},payload=>{const m=payload.new;if(m.sender_id!==state.user.id&&m.conversation_id!==state.conversation){toast("New message received.");}loadConversations().catch(()=>{});}).subscribe();}
   async function initialize(user){if(!user||!db)return;state.user=user;ui.auth.classList.add("hidden");ui.app.classList.remove("hidden");$("mobileNav").classList.remove("hidden");switchSection("chats");try{await loadMyProfile();await loadPeople();await loadConversations();await loadStatuses();subscribeInbox();subscribeToIncomingCalls().catch(e=>console.warn("Incoming call setup:",e));loadCallHistory().catch(e=>console.warn("Call history:",e));setComposerEnabled(false);}catch(e){console.error(e);toast("Some account data could not be loaded: "+errorText(e));}}
   function bindEvents(){
+     $("cancelReplyBtn").addEventListener("click", cancelReply);
     $("showLoginBtn").addEventListener("click",showLoginMode);$("showSignupBtn").addEventListener("click",showSignupMode);
     document.querySelectorAll(".password-toggle").forEach(btn=>btn.addEventListener("click",()=>{const input=$(btn.dataset.target);input.type=input.type==="password"?"text":"password";btn.textContent=input.type==="password"?"Show":"Hide";}));
     ui.signup.addEventListener("submit",async e=>{e.preventDefault();const displayName=$("displayName").value.trim(),username=$("username").value.trim().toLowerCase(),email=$("signupEmail").value.trim(),password=$("signupPassword").value;if(!displayName||displayName.length>40||! /^[a-zA-Z0-9_]{3,20}$/.test(username)||password.length<8){showAuthError("Check your name, username (3–20 letters/numbers/underscores) and password (8+ characters).");return;}const btn=$("signupBtn");btn.disabled=true;btn.textContent="Creating account…";try{const {data,error}=await db.auth.signUp({email,password,options:{emailRedirectTo:location.href.split("#")[0],data:{display_name:displayName,username}}});if(error)throw error;if(data.session)await initialize(data.user);else showAuthMessage("Account created. Check your email to confirm, then sign in.");}catch(err){showAuthError("Registration failed: "+errorText(err));}finally{btn.disabled=false;btn.textContent="Create account";}});
     ui.login.addEventListener("submit",async e=>{e.preventDefault();const btn=$("loginBtn");btn.disabled=true;btn.textContent="Signing in…";try{const {data,error}=await db.auth.signInWithPassword({email:$("email").value.trim(),password:$("password").value});if(error)throw error;await initialize(data.user);}catch(err){showAuthError("Login failed: "+errorText(err));}finally{btn.disabled=false;btn.textContent="Sign in";}});
-    $("recoverBtn").addEventListener("click",async()=>{const email=$("email").value.trim();if(!email){showAuthError("Enter your email address first.");return;}try{const {error}=await db.auth.resetPasswordForEmail(email,{redirectTo:location.href.split("#")[0]});if(error)throw error;showAuthMessage("Password reset instructions have been sent if the account exists.");}catch(e){showAuthError(errorText(e));}});
-    ui.composer.addEventListener("submit",async e=>{e.preventDefault();const body=ui.message.value.trim();if(!body||!state.conversation)return;ui.send.disabled=true;try{await sendTextMessage(body);ui.message.value="";}catch(err){toast("Message could not be sent: "+errorText(err));}finally{ui.send.disabled=false;ui.message.focus();}});
-    $("peopleSearch").addEventListener("input",renderPeople);$("newChatBtn").addEventListener("click",()=>{$("peopleSearch").focus();$("peopleSearch").scrollIntoView({behavior:"smooth",block:"center"});});$("emptyFindPeopleBtn").addEventListener("click",()=>{$("peopleSearch").focus();});
-    $("backToPeopleBtn").addEventListener("click",()=>{$("chatPanel").classList.remove("mobile-open");$("chatActive").classList.add("hidden");$("chatEmptyState").classList.remove("hidden");state.conversation=null;setComposerEnabled(false);if(state.messageChannel){db.removeChannel(state.messageChannel);state.messageChannel=null;}});
-    document.querySelectorAll("[data-section]").forEach(btn=>btn.addEventListener("click",()=>{switchSection(btn.dataset.section);if(window.innerWidth<=650){$("chatPanel").classList.remove("mobile-open");}}));
-    $("mainMenuBtn").addEventListener("click",e=>{e.stopPropagation();$("mainMenu").classList.toggle("hidden");$("mainMenuBtn").setAttribute("aria-expanded",String(!$("mainMenu").classList.contains("hidden")));});document.addEventListener("click",e=>{if(!$("mainMenu").contains(e.target)&&!$("mainMenuBtn").contains(e.target))$("mainMenu").classList.add("hidden");});
-    $("menuProfileBtn").addEventListener("click",()=>{$("profileModal").classList.remove("hidden");$("mainMenu").classList.add("hidden");});$("menuSettingsBtn").addEventListener("click",()=>switchSection("settings"));$("menuPrivacyBtn").addEventListener("click",()=>{switchSection("settings");toast("Privacy controls are not exposed by the inspected backend.");});$("menuNotificationsBtn").addEventListener("click",enableNotifications);$("menuHelpBtn").addEventListener("click",()=>toast("For help, review the README included with this project."));$("menuLogoutBtn").addEventListener("click",signOut);
-    $("logoutBtn").addEventListener("click",signOut);$("openProfileSettings").addEventListener("click",()=>$("profileModal").classList.remove("hidden"));$("openNotificationSettings").addEventListener("click",enableNotifications);$("openPrivacySettings").addEventListener("click",()=>toast("No privacy preference table or API was found; no inactive toggles are shown."));
-    $("myStatusAction").addEventListener("click",openActionSheet);$("myStatusViewBtn").addEventListener("click",()=>{const mine=state.statusGroups.get(state.user.id)||[];if(mine.length)openStatusViewer(mine,"Your status");else openActionSheet();});$("cancelActionSheet").addEventListener("click",closeActionSheet);$("actionSheet").addEventListener("click",e=>{if(e.target===$("actionSheet"))closeActionSheet();});$("addStatusAction").addEventListener("click",()=>{closeActionSheet();openStatusComposer();});$("changeProfilePhotoBtn").addEventListener("click",()=>{closeActionSheet();$("profilePhotoInput").click();});
-    $("profilePhotoInput").addEventListener("change",e=>{uploadProfilePhoto(e.target.files?.[0]);e.target.value="";});$("closeStatusComposer").addEventListener("click",closeStatusComposer);$("createTextStatusBtn").addEventListener("click",()=>{$("statusChoiceView").classList.add("hidden");$("textStatusEditor").classList.remove("hidden");});$("mediaStatusOption").addEventListener("click",()=>$("statusMediaInput").click());$("statusMediaInput").addEventListener("change",e=>{const file=e.target.files?.[0];if(!file)return;if(!file.type.startsWith("image/")&&!file.type.startsWith("video/")){toast("Choose a photo or video.");return;}if(file.size>50*1024*1024){toast("Media must be smaller than 50 MB.");return;}state.selectedFile=file;if(state.previewUrl)URL.revokeObjectURL(state.previewUrl);state.previewUrl=URL.createObjectURL(file);const box=$("statusMediaPreview");box.replaceChildren();const el=document.createElement(file.type.startsWith("video/")?"video":"img");el.src=state.previewUrl;if(el.tagName==="VIDEO"){el.controls=true;el.playsInline=true;}else el.alt="Status preview";box.append(el);$("statusChoiceView").classList.add("hidden");$("mediaStatusEditor").classList.remove("hidden");});$("postTextStatus").addEventListener("click",postTextStatus);$("postMediaStatus").addEventListener("click",postMediaStatus);document.querySelectorAll("[data-color]").forEach(btn=>btn.addEventListener("click",()=>{state.statusColor=btn.dataset.color;$("textStatusEditor").style.background=state.statusColor;$("textStatusEditor").style.color="#fff";}));
-    $("closeStatusViewer").addEventListener("click",closeStatusViewer);$("statusViewerContent").addEventListener("click",async e=>{if(e.target.closest("video"))return;const next=e.clientX>innerWidth/2?1:-1;const i=state.activeStatusIndex+next;if(i>=0&&i<state.activeStatuses.length){state.activeStatusIndex=i;await renderStatus();}else if(next>0)closeStatusViewer();});
-    $("saveProfileBtn").addEventListener("click",saveProfile);document.querySelectorAll(".close-modal").forEach(b=>b.addEventListener("click",()=>b.closest(".modal-backdrop").classList.add("hidden")));$("profileModal").addEventListener("click",e=>{if(e.target===$("profileModal"))$("profileModal").classList.add("hidden");});
-    ui.attach.addEventListener("click",()=>ui.media.click());ui.media.addEventListener("change",async e=>{const file=e.target.files?.[0];if(!file)return;try{const type=file.type.startsWith("video/")?"video":file.type.startsWith("image/")?"image":null;if(!type)throw new Error("Choose an image or video.");await sendAttachment(file,type);}catch(err){toast(errorText(err));}finally{ui.media.value="";}});
-  }
-  // WebRTC voice/video calling uses the repository's call_sessions and call_signals tables.
-  const callEl=id=>$(id);
-  function showCallUI(){callEl("callScreen").classList.remove("hidden");}
-  function setCallStatus(message){callEl("callStatus").textContent=message;}
-  function setCallTimer(){if(callState.timer)clearInterval(callState.timer);callState.startedAt=Date.now();callState.timer=setInterval(()=>{const sec=Math.floor((Date.now()-callState.startedAt)/1000);callEl("callTimer").textContent=String(Math.floor(sec/60)).padStart(2,"0")+":"+String(sec%60).padStart(2,"0");},1000);}
-  async function sendCallSignal(type,payload){if(!callState.id||!callState.partnerId||!state.user)throw new Error("Call session is not ready.");const {error}=await db.from("call_signals").insert({call_id:callState.id,sender_id:state.user.id,recipient_id:callState.partnerId,signal_type:type,payload});if(error)throw error;}
-  function createCallPeer(){if(callState.peer)callState.peer.close();callState.peer=new RTCPeerConnection({iceServers:[{urls:"stun:stun.l.google.com:19302"},{urls:"stun:stun1.l.google.com:19302"}]});const pc=callState.peer;pc.onicecandidate=e=>{if(e.candidate)sendCallSignal("ice-candidate",e.candidate.toJSON()).catch(err=>{console.error(err);setCallStatus("Network signalling failed");});};pc.ontrack=e=>{const stream=e.streams[0];if(callState.type==="video"){callEl("remoteVideo").srcObject=stream;callEl("remoteVideo").classList.remove("hidden");callEl("remoteAudio").srcObject=null;}else{callEl("remoteAudio").srcObject=stream;callEl("remoteAudio").play().catch(()=>{});}};pc.onconnectionstatechange=()=>{if(pc.connectionState==="connected"){setCallStatus("Connected");if(!callState.timer)setCallTimer();}else if(pc.connectionState==="failed"){setCallStatus("Connection failed — try ending and calling again.");}else if(pc.connectionState==="disconnected"){setCallStatus("Connection interrupted…");}};return pc;}
-  async function acquireCallMedia(){if(!navigator.mediaDevices?.getUserMedia)throw new Error("Camera and microphone access requires HTTPS or localhost.");callState.stream=await navigator.mediaDevices.getUserMedia({audio:true,video:callState.type==="video"?{facingMode:"user"}:false});if(callState.type==="video"){callEl("localVideo").srcObject=callState.stream;callEl("localVideo").classList.remove("hidden");callEl("callAvatar").classList.add("hidden");}else{callEl("localVideo").srcObject=null;callEl("localVideo").classList.add("hidden");callEl("remoteVideo").classList.add("hidden");callEl("callAvatar").classList.remove("hidden");}return callState.stream;}
-  async function subscribeCallSignals(){if(callState.signals)await db.removeChannel(callState.signals);return new Promise((resolve,reject)=>{callState.signals=db.channel("uni-call-signals-"+callState.id).on("postgres_changes",{event:"INSERT",schema:"public",table:"call_signals",filter:"call_id=eq."+callState.id},async payload=>{const signal=payload.new;if(!signal||signal.recipient_id!==state.user.id)return;try{if(signal.signal_type==="offer"){callState.offer=signal.payload;setCallStatus("Incoming call — accept to connect");if(callState.accepted)await answerIncomingOffer();}else if(signal.signal_type==="answer"){if(!callState.peer)return;await callState.peer.setRemoteDescription(new RTCSessionDescription(signal.payload));for(const candidate of callState.ice)await callState.peer.addIceCandidate(new RTCIceCandidate(candidate));callState.ice=[];}else if(signal.signal_type==="ice-candidate"){if(callState.peer?.remoteDescription)await callState.peer.addIceCandidate(new RTCIceCandidate(signal.payload));else callState.ice.push(signal.payload);}else if(signal.signal_type==="hangup"){await cleanupCall();toast("The other person ended the call.");}}catch(err){console.error("Call signal processing failed",err);setCallStatus("Call connection error");}}).subscribe(status=>{if(status==="SUBSCRIBED")resolve();if(["CHANNEL_ERROR","TIMED_OUT","CLOSED"].includes(status))reject(new Error("Could not subscribe to call signalling: "+status));});});}
-  async function subscribeCallStatus(){if(callState.status)await db.removeChannel(callState.status);const id=callState.id;callState.status=db.channel("uni-call-status-"+id).on("postgres_changes",{event:"UPDATE",schema:"public",table:"call_sessions",filter:"id=eq."+id},async payload=>{const call=payload.new;if(!call||callState.id!==id)return;if(call.status==="accepted"){setCallStatus("Accepted — connecting…");callEl("incomingCallActions").classList.add("hidden");}else if(["declined","ended","missed"].includes(call.status)){const msg=call.status==="declined"?"Call declined":call.status==="missed"?"Missed call":"Call ended";await cleanupCall();setCallStatus(msg);}}).subscribe();}
-  async function answerIncomingOffer(){if(!callState.offer||!callState.id||!callState.accepted||callState.peer)return;const pc=createCallPeer();const stream=callState.stream||await acquireCallMedia();stream.getTracks().forEach(track=>pc.addTrack(track,stream));await pc.setRemoteDescription(new RTCSessionDescription(callState.offer));for(const candidate of callState.ice)await pc.addIceCandidate(new RTCIceCandidate(candidate));callState.ice=[];const answer=await pc.createAnswer();await pc.setLocalDescription(answer);await sendCallSignal("answer",answer);callState.offer=null;setCallStatus("Connecting…");}
-  async function handleIncomingCall(call){if(!call||call.status!=="ringing"||call.callee_id!==state.user?.id||callState.id)return;callState.id=call.id;callState.type=call.call_type;callState.partnerId=call.caller_id;callState.incoming=call;callState.accepted=false;callState.offer=null;callState.ice=[];const profile=await fetchProfile(call.caller_id).catch(()=>null);callEl("callPersonName").textContent=profile?.display_name||"Incoming call";callEl("callAvatar").textContent=(profile?.display_name||"U").slice(0,1).toUpperCase();callEl("callAvatar").classList.remove("hidden");callEl("incomingCallActions").classList.remove("hidden");callEl("localVideo").classList.add("hidden");callEl("remoteVideo").classList.add("hidden");setCallStatus(call.call_type==="video"?"Incoming video call…":"Incoming voice call…");showCallUI();await subscribeCallStatus();await subscribeCallSignals();const {data:offer,error}=await db.from("call_signals").select("payload").eq("call_id",call.id).eq("recipient_id",state.user.id).eq("signal_type","offer").order("created_at",{ascending:true}).limit(1).maybeSingle();if(error)throw error;if(offer&&!callState.offer)callState.offer=offer.payload;}
-  async function subscribeToIncomingCalls(){if(!state.user)return;if(callState.incomingChannel)await db.removeChannel(callState.incomingChannel);callState.incomingChannel=db.channel("uni-incoming-calls-"+state.user.id).on("postgres_changes",{event:"INSERT",schema:"public",table:"call_sessions",filter:"callee_id=eq."+state.user.id},payload=>handleIncomingCall(payload.new).catch(err=>{console.error(err);toast("Incoming call could not be opened: "+errorText(err));})).subscribe();const {data,error}=await db.from("call_sessions").select("id,conversation_id,caller_id,callee_id,call_type,status,created_at").eq("callee_id",state.user.id).eq("status","ringing").order("created_at",{ascending:false}).limit(1);if(error)throw error;if(data?.[0])await handleIncomingCall(data[0]);}
-  async function startCall(type){if(!state.user||!state.conversation||!state.partner){toast("Open a conversation before starting a call.");return;}if(callState.id){toast("You already have an active call.");return;}if(!window.RTCPeerConnection){toast("This browser does not support WebRTC calls.");return;}try{callState.type=type;callEl("callPersonName").textContent=state.partner.display_name||"u n i chat member";callEl("callAvatar").textContent=(state.partner.display_name||"U").slice(0,1).toUpperCase();callEl("incomingCallActions").classList.add("hidden");setCallStatus("Requesting microphone and camera…");showCallUI();await acquireCallMedia();const {data:members,error:membersError}=await db.from("conversation_members").select("user_id").eq("conversation_id",state.conversation);if(membersError)throw membersError;const partner=members?.find(m=>m.user_id!==state.user.id);if(!partner)throw new Error("Chat partner not found in this conversation.");callState.partnerId=partner.user_id;const {data:call,error}=await db.from("call_sessions").insert({conversation_id:state.conversation,caller_id:state.user.id,callee_id:partner.user_id,call_type:type,status:"ringing"}).select().single();if(error)throw error;callState.id=call.id;await subscribeCallStatus();await subscribeCallSignals();const pc=createCallPeer();callState.stream.getTracks().forEach(track=>pc.addTrack(track,callState.stream));const offer=await pc.createOffer();await pc.setLocalDescription(offer);await sendCallSignal("offer",offer);db.functions.invoke("send-push",{body:{call_id:call.id}}).catch(e=>console.warn("Call push request failed",e));setCallStatus("Calling… waiting for answer");}catch(err){console.error("Could not start call",err);toast("Unable to start call: "+errorText(err));if(callState.id)await db.from("call_sessions").update({status:"ended"}).eq("id",callState.id).catch(()=>{});await cleanupCall();}}
-  async function updateCallStatus(status){if(!callState.id)return;const id=callState.id;const {error}=await db.from("call_sessions").update({status}).eq("id",id);if(error)throw error;if(status==="accepted"){callState.accepted=true;callEl("incomingCallActions").classList.add("hidden");setCallStatus("Preparing connection…");if(callState.offer)await answerIncomingOffer();}else{try{await sendCallSignal("hangup",{status});}catch{}await cleanupCall();}}
-  async function cleanupCall(){if(callState.timer){clearInterval(callState.timer);callState.timer=null;}if(callState.stream){callState.stream.getTracks().forEach(t=>t.stop());callState.stream=null;}if(callState.peer){callState.peer.ontrack=null;callState.peer.onicecandidate=null;callState.peer.close();callState.peer=null;}if(callState.signals){await db.removeChannel(callState.signals);callState.signals=null;}if(callState.status){await db.removeChannel(callState.status);callState.status=null;}callEl("localVideo").srcObject=null;callEl("remoteVideo").srcObject=null;callEl("remoteAudio").srcObject=null;callEl("incomingCallActions").classList.add("hidden");callEl("callScreen").classList.add("hidden");callState.id=null;callState.type=null;callState.partnerId=null;callState.incoming=null;callState.offer=null;callState.ice=[];callState.accepted=false;callState.muted=false;callState.camera=true;callState.startedAt=null;callEl("callTimer").textContent="00:00";callEl("muteCallBtn").classList.remove("is-off");callEl("cameraCallBtn").classList.remove("is-off");}
-  async function loadCallHistory(){if(!state.user)return;const {data,error}=await db.from("call_sessions").select("id,conversation_id,caller_id,callee_id,call_type,status,created_at").or("caller_id.eq."+state.user.id+",callee_id.eq."+state.user.id).order("created_at",{ascending:false}).limit(30);if(error)throw error;const list=$("callHistoryList");if(!list)return;list.replaceChildren();if(!data?.length){const empty=document.createElement("div");empty.className="empty-state compact";empty.textContent="No calls yet. Start an audio or video call from a conversation.";list.append(empty);return;}for(const call of data){const otherId=call.caller_id===state.user.id?call.callee_id:call.caller_id;const profile=await fetchProfile(otherId).catch(()=>null);const row=document.createElement("div");row.className="call-history-item";const icon=document.createElement("span");icon.className="call-history-icon";icon.textContent=call.call_type==="video"?"▣":"☎";const copy=document.createElement("span");copy.className="call-history-copy";const name=document.createElement("strong");name.textContent=profile?.display_name||"u n i chat member";const detail=document.createElement("small");detail.textContent=(call.caller_id===state.user.id?"Outgoing":"Incoming")+" · "+(call.call_type||"audio");copy.append(name,detail);const meta=document.createElement("span");meta.className="call-history-meta";meta.textContent=(call.status||"call")+"\n"+new Date(call.created_at).toLocaleDateString();row.append(icon,copy,meta);row.title="Open conversation";row.addEventListener("click",async()=>{const conv=state.conversations.find(c=>c.conversationId===call.conversation_id);if(conv)await openConversation(call.conversation_id,conv.profile);else if(profile)await startConversation(profile.id);switchSection("chats");});list.append(row);}}
-  function bindCallEvents(){$("audioCallMenuItem").addEventListener("click",()=>startCall("audio"));$("videoCallMenuItem").addEventListener("click",()=>startCall("video"));$("acceptCallBtn").addEventListener("click",async()=>{try{await acquireCallMedia();await updateCallStatus("accepted");}catch(e){toast("Could not accept call: "+errorText(e));}});$("declineCallBtn").addEventListener("click",()=>updateCallStatus("declined").catch(e=>toast(errorText(e))));$("endCallBtn").addEventListener("click",()=>updateCallStatus("ended").catch(e=>toast(errorText(e))));$("closeCallBtn").addEventListener("click",()=>updateCallStatus("ended").catch(e=>toast(errorText(e))));$("muteCallBtn").addEventListener("click",()=>{if(!callState.stream)return;callState.muted=!callState.muted;callState.stream.getAudioTracks().forEach(t=>t.enabled=!callState.muted);$("muteCallBtn").classList.toggle("is-off",callState.muted);$("muteCallBtn").title=callState.muted?"Unmute microphone":"Mute microphone";});$("cameraCallBtn").addEventListener("click",()=>{if(callState.type!=="video"||!callState.stream)return;callState.camera=!callState.camera;callState.stream.getVideoTracks().forEach(t=>t.enabled=callState.camera);$("cameraCallBtn").classList.toggle("is-off",!callState.camera);$("cameraCallBtn").title=callState.camera?"Turn camera off":"Turn camera on";});}
-
-  async function signOut(){try{await cleanupCall();if(callState.incomingChannel){await db.removeChannel(callState.incomingChannel);callState.incomingChannel=null;}const {error}=await db.auth.signOut();if(error)throw error;cleanChannels();state.user=null;state.conversation=null;showSignedOut();}catch(e){toast("Could not sign out: "+errorText(e));}}
-  if(!db){showAuthError("Supabase client did not load. Check your connection and refresh.");return;}
-  bindEvents();
-  bindCallEvents();
-  db.auth.onAuthStateChange((event,session)=>{if(session?.user){if(state.user?.id!==session.user.id)queueMicrotask(()=>initialize(session.user));}else if(event==="SIGNED_OUT"){cleanupCall().catch(()=>{});cleanChannels();state.user=null;showSignedOut();}});
-  db.auth.getSession().then(({data,error})=>{if(error)throw error;if(data.session)initialize(data.session.user);else showSignedOut();}).catch(e=>{console.error(e);showSignedOut();showAuthError("Could not restore your session: "+errorText(e));});
-  if("serviceWorker"in navigator&&location.protocol!=="file:"){navigator.serviceWorker.register("./sw.js").catch(e=>console.warn("Service worker registration failed",e));}
-})();
+    $("recoverBtn").addEventListener("click",async()=>{const email=$("email").value.trim();if(!email){showAuthError("Enter your email address first.");return;}try{const {error}=await db.auth.resetPasswordForEmail(email,{redirectTo:location.href.split("#")[0]});if(error)throw error;showAuth
