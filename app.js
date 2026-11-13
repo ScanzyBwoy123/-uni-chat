@@ -172,6 +172,27 @@ mainMenu.addEventListener("click", (event) => {
     mainMenuBtn.setAttribute("aria-expanded", "false");
   }
 });
+// New Chat button
+newChatBtn.addEventListener(“click”, () => {
+peopleSearch.focus();
+peopleSearch.scrollIntoView({
+behavior: “smooth”,
+block: “center”
+});
+});
+
+// Open Profile section
+menuProfileBtn.addEventListener(“click”, () => {
+document.querySelector(”.profile-settings”).scrollIntoView({
+behavior: “smooth”,
+block: “center”
+});
+});
+
+// Sign out using the existing logout functionality
+menuLogoutBtn.addEventListener(“click”, () => {
+logoutBtn.click();
+});
 // ---------------- OFFLINE MESSAGE STORAGE ----------------
 
 const OFFLINE_DB_NAME = "uni-chat-local";
