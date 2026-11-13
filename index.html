@@ -89,15 +89,42 @@
       <!-- PEOPLE DIRECTORY -->
       <section id="peoplePanel" class="people-panel">
 
-        <div class="directory-heading">
-          <div>
-            <p class="eyebrow">YOUR COMMUNITY</p>
-            <h2>Find your people 💗</h2>
-            <p class="directory-description">
-              Discover people and start a private conversation.
-            </p>
-          </div>
-        </div>
+        <div class="inbox-header">
+  <div>
+    <h2>Chats</h2>
+    <p>Your conversations</p>
+  </div>
+
+  <div class="inbox-actions">
+    <button id="newChatBtn" class="header-icon-btn"
+      type="button" aria-label="New chat">
+      <svg viewBox="0 0 24 24">
+        <path d="M12 5v14M5 12h14"
+          fill="none" stroke="currentColor"
+          stroke-width="2" stroke-linecap="round"/>
+      </svg>
+    </button>
+
+    <button id="mainMenuBtn" class="header-icon-btn"
+      type="button" aria-label="More options"
+      aria-expanded="false">
+      <svg viewBox="0 0 24 24">
+        <circle cx="12" cy="5" r="1.8" fill="currentColor"/>
+        <circle cx="12" cy="12" r="1.8" fill="currentColor"/>
+        <circle cx="12" cy="19" r="1.8" fill="currentColor"/>
+      </svg>
+    </button>
+  </div>
+</div>
+
+<div id="mainMenu" class="main-menu hidden">
+  <button type="button" id="menuProfileBtn">Profile</button>
+  <button type="button" id="menuSettingsBtn">Settings</button>
+  <button type="button" id="menuPrivacyBtn">Privacy</button>
+  <button type="button" id="menuNotificationsBtn">Notifications</button>
+  <button type="button" id="menuHelpBtn">Help</button>
+  <button type="button" id="menuLogoutBtn">Sign out</button>
+</div>
         <!-- MY PROFILE PHOTO -->
 <div class="profile-settings">
   <div class="profile-avatar-wrap">
