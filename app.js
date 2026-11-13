@@ -213,6 +213,93 @@ if (message.reply_to_message_id) {
 
   scrollBottom();
 }
+   function showMessageMenu(message, x, y) {
+  document.getElementById("messageActionMenu")?.remove();
+
+  const menu = document.createElement("div");
+  menu.id = "messageActionMenu";
+  menu.className = "message-action-menu";
+
+  const addOption = (label, action, danger = false) => {
+    const button = document.createElement("button");
+    button.type = "button";
+    button.textContent = label;
+
+    if (danger) button.classList.add("danger");
+
+    button.addEventListener("click", event => {
+      event.stopPropagation();
+      menu.remove();
+      action();
+    });
+
+    menu.append(button);
+  };
+
+  addOption("↩ Reply", () => startReply(message));
+  addOption("Delete for me", () => deleteMessageForMe(message));
+
+  if (message.sender_id === state.user.id) {
+    addOption("Delete for everyone", () => deleteMessageForEveryone(message), true);
+  }
+
+  document.body.append(menu);
+
+  const left = Math.max(8, Math.min(x, window.innerWidth - menu.offsetWidth - 8));
+  const top = Math.max(8, Math.min(y, window.innerHeight - menu.offsetHeight - 8));
+
+  menu.style.left = left + "px";
+  menu.style.top = top + "px";
+
+  setTimeout(() => document.addEventListener("pointerdown", function closeMenu(event) {
+    if (!menu.contains(event.target)) {
+      menu.remove();
+      document.removeEventListener("pointerdown", closeMenu);
+    }
+  }, { once: true }), 0);
+}
+
+async function refreshMessages() {
+  if (!state.conversation) return;
+  state.loaded.clear();
+  await loadMessages();
+}
+
+async function deleteMessageForMe(message) {
+  const { error } = await db.from("message_user_hides").insert({
+    message_id: message.id,
+    user_id: state.user.id
+  });
+
+  if (error && error.code !== "23505") {
+    toast("Could not delete message: " + errorText(error));
+    return;
+  }
+
+  await refreshMessages();
+}
+
+async function deleteMessageForEveryone(message) {
+  if (message.sender_id !== state.user.id) return;
+
+  if (!window.confirm("Delete this message for everyone?")) return;
+
+  const { data, error } = await db.from("messages")
+    .update({ deleted_for_everyone: true })
+    .eq("id", message.id)
+    .eq("sender_id", state.user.id)
+    .eq("deleted_for_everyone", false)
+    .select("id")
+    .maybeSingle();
+
+  if (error || !data) {
+    toast("Could not delete for everyone: " + (errorText(error) || "Permission denied."));
+    return;
+  }
+
+  await refreshMessages();
+  loadConversations().catch(() => {});
+}
   function scrollBottom(){ui.messages.scrollTop=ui.messages.scrollHeight;}
   function subscribeMessages(id){state.messageChannel=db.channel("private-chat-"+id).on("postgres_changes",{event:"INSERT",schema:"public",table:"messages",filter:"conversation_id=eq."+id},payload=>{if(state.conversation===id){renderMessage(payload.new);loadConversations().catch(()=>{});}}).subscribe(status=>{$("connectionStatus").textContent=status==="SUBSCRIBED"?"Connected":status==="CHANNEL_ERROR"?"Connection problem":"Connecting…";});}
   async function sendTextMessage(body) {
