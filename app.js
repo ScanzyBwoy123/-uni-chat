@@ -89,7 +89,26 @@ function cancelReply() {
   async function renderMessage(message){if(!message?.id||state.loaded.has(message.id))return;state.loaded.add(message.id);const wrap=document.createElement("article");wrap.className="message "+(message.sender_id===state.user.id?"sent":"received");if(message.message_type==="voice"&&message.attachment_path){const audio=document.createElement("audio");audio.controls=true;try{audio.src=await mediaSignedUrl(message.attachment_path);}catch{audio.textContent="Voice message unavailable";}wrap.append(audio);}else if((message.message_type==="image"||message.message_type==="video")&&message.attachment_path){try{const url=await mediaSignedUrl(message.attachment_path);if(message.message_type==="image"){const img=document.createElement("img");img.src=url;img.alt="Shared image";wrap.append(img);}else{const video=document.createElement("video");video.src=url;video.controls=true;video.playsInline=true;wrap.append(video);}}catch{const p=document.createElement("span");p.textContent="Attachment unavailable";wrap.append(p);}}else{const body=document.createElement("div");body.textContent=message.body||"Attachment";wrap.append(body);}const time=document.createElement("small");time.className="message-time";time.textContent=new Date(message.created_at).toLocaleTimeString([],{hour:"2-digit",minute:"2-digit"});wrap.append(time);ui.messages.append(wrap);scrollBottom();}
   function scrollBottom(){ui.messages.scrollTop=ui.messages.scrollHeight;}
   function subscribeMessages(id){state.messageChannel=db.channel("private-chat-"+id).on("postgres_changes",{event:"INSERT",schema:"public",table:"messages",filter:"conversation_id=eq."+id},payload=>{if(state.conversation===id){renderMessage(payload.new);loadConversations().catch(()=>{});}}).subscribe(status=>{$("connectionStatus").textContent=status==="SUBSCRIBED"?"Connected":status==="CHANNEL_ERROR"?"Connection problem":"Connecting…";});}
-  async function sendTextMessage(body){const {data,error}=await db.from("messages").insert({conversation_id:state.conversation,sender_id:state.user.id,body,message_type:"text"}).select().single();if(error)throw error;renderMessage(data);loadConversations().catch(()=>{});notifySend(data.id);}
+  async function sendTextMessage(body) {
+  const { data, error } = await db
+    .from("messages")
+    .insert({
+      conversation_id: state.conversation,
+      sender_id: state.user.id,
+      body,
+      message_type: "text",
+      reply_to_message_id: state.replyTo?.id || null
+    })
+    .select()
+    .single();
+
+  if (error) throw error;
+
+  cancelReply();
+  renderMessage(data);
+  loadConversations().catch(() => {});
+  notifySend(data.id);
+}
   async function notifySend(id){try{await db.functions.invoke("send-push",{body:{message_id:id}});}catch(e){console.warn("Push send unavailable",e);}}
   async function sendAttachment(file,type){if(file.size>50*1024*1024)throw new Error("File must be smaller than 50 MB.");const ext=(file.name.split(".").pop()||"bin").toLowerCase();const path=`${state.conversation}/${state.user.id}/${crypto.randomUUID()}.${ext}`;const {error:uploadError}=await db.storage.from("chat-media").upload(path,file,{contentType:file.type,upsert:false});if(uploadError)throw uploadError;const {data,error}=await db.from("messages").insert({conversation_id:state.conversation,sender_id:state.user.id,message_type:type,body:null,attachment_path:path}).select().single();if(error){await db.storage.from("chat-media").remove([path]);throw error;}renderMessage(data);notifySend(data.id);}
   async function openOfflineDB(){return new Promise((resolve,reject)=>{const req=indexedDB.open("uni-chat-local",1);req.onupgradeneeded=()=>{if(!req.result.objectStoreNames.contains("messages"))req.result.createObjectStore("messages",{keyPath:"cacheKey"});};req.onsuccess=()=>resolve(req.result);req.onerror=()=>reject(req.error);});}
