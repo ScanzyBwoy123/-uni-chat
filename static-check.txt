@@ -1,0 +1,9 @@
+Static validation
+=================
+HTML ID count: 137
+Duplicate IDs: []
+Literal JS DOM references: 109
+Missing DOM IDs: []
+Node syntax check: passed
+CSS parse: passed
+Required files: all present
