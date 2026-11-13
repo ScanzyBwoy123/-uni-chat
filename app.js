@@ -285,7 +285,11 @@ async function deleteMessageForEveryone(message) {
   if (!window.confirm("Delete this message for everyone?")) return;
 
   const { data, error } = await db.from("messages")
-    .update({ deleted_for_everyone: true })
+ .update({
+  deleted_for_everyone: true,
+  body: null,
+  attachment_path: null
+})
     .eq("id", message.id)
     .eq("sender_id", state.user.id)
     .eq("deleted_for_everyone", false)
