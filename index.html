@@ -115,6 +115,18 @@
           </div>
         </header>
         <div id="messages" class="messages"><div class="empty-state"><strong>Your conversation starts here</strong><p>Send a message to say hello.</p></div></div>
+        <div id="replyPreview" class="reply-preview hidden">
+  <div class="reply-preview-content">
+    <strong>Replying to</strong>
+    <span id="replyPreviewText"></span>
+  </div>
+
+  <button
+    id="cancelReplyBtn"
+    type="button"
+    aria-label="Cancel reply"
+  >×</button>
+</div>
         <form id="composer" class="composer">
           <button id="attachBtn" class="composer-icon" type="button" aria-label="Attach photo or video" disabled><svg><use href="#i-attach"/></svg></button>
           <input id="mediaInput" type="file" accept="image/*,video/*" hidden disabled>
