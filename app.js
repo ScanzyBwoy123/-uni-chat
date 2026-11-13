@@ -50,7 +50,16 @@ onlineUsers: new Set()
   function showSignupMode(){ui.signup.classList.remove("hidden");ui.login.classList.add("hidden");$("showSignupBtn").classList.add("active");$("showLoginBtn").classList.remove("active");$("authHeading").textContent="Find your people.";$("authSubheading").textContent="Create an account to get started.";showAuthMessage("");showAuthError("");}
   function showSignedOut(){state.initializedUserId=null;ui.app.classList.add("hidden");$("mobileNav").classList.add("hidden");ui.auth.classList.remove("hidden");}
   function setComposerEnabled(on){ui.message.disabled=!on;ui.send.disabled=!on;ui.attach.disabled=!on;ui.media.disabled=!on;ui.voice.disabled=!on;}
-  function cleanChannels(){[state.messageChannel,state.inboxChannel,state.statusChannel,callState.incomingChannel].forEach(ch=>{if(ch)db.removeChannel(ch);});state.messageChannel=state.inboxChannel=state.statusChannel=null;callState.incomingChannel=null;}
+  function cleanChannels(){
+  [state.messageChannel,state.inboxChannel,state.statusChannel,state.presenceChannel,callState.incomingChannel].forEach(ch=>{
+    if(ch)db.removeChannel(ch);
+  });
+  if(state.presenceTimer)clearInterval(state.presenceTimer);
+  state.messageChannel=state.inboxChannel=state.statusChannel=state.presenceChannel=null;
+  state.presenceTimer=null;
+  state.onlineUsers.clear();
+  callState.incomingChannel=null;
+}
   function avatarUrl(path){if(!path)return null;const {data}=db.storage.from("profile-pictures").getPublicUrl(path);return data?.publicUrl||null;}
   function setAvatar(path){const url=avatarUrl(path);state.avatarUrl=url;if(url){$("myProfileAvatar").src=url;$("myProfileAvatar").classList.remove("hidden");$("myProfileAvatarFallback").classList.add("hidden");}else{$("myProfileAvatar").classList.add("hidden");$("myProfileAvatarFallback").classList.remove("hidden");}}
   function setPartnerAvatar(path){const url=avatarUrl(path);if(url){$("partnerAvatar").src=url;$("partnerAvatar").classList.remove("hidden");$("partnerAvatarFallback").classList.add("hidden");}else{$("partnerAvatar").classList.add("hidden");$("partnerAvatarFallback").classList.remove("hidden");}}
