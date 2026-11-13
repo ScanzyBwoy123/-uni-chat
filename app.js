@@ -328,3 +328,141 @@ if (message.reply_to_message_id) {
     callEl("muteCallBtn").classList.remove("is-off");
     callEl("cameraCallBtn").classList.remove("is-off");
   }
+     async function loadCallHistory(){
+    if(!state.user)return;
+    const {data,error}=await db.from("call_sessions")
+      .select("id,conversation_id,caller_id,callee_id,call_type,status,created_at")
+      .or("caller_id.eq."+state.user.id+",callee_id.eq."+state.user.id)
+      .order("created_at",{ascending:false}).limit(30);
+    if(error)throw error;
+    const list=$("callHistoryList");
+    if(!list)return;
+    list.replaceChildren();
+    if(!data?.length){
+      const empty=document.createElement("div");
+      empty.className="empty-state compact";
+      empty.textContent="No calls yet. Start an audio or video call from a conversation.";
+      list.append(empty);
+      return;
+    }
+    for(const call of data){
+      const otherId=call.caller_id===state.user.id?call.callee_id:call.caller_id;
+      const profile=await fetchProfile(otherId).catch(()=>null);
+      const row=document.createElement("div");
+      row.className="call-history-item";
+      const icon=document.createElement("span");
+      icon.className="call-history-icon";
+      icon.textContent=call.call_type==="video"?"▣":"☎";
+      const copy=document.createElement("span");
+      copy.className="call-history-copy";
+      const name=document.createElement("strong");
+      name.textContent=profile?.display_name||"u n i chat member";
+      const detail=document.createElement("small");
+      detail.textContent=(call.caller_id===state.user.id?"Outgoing":"Incoming")+" · "+(call.call_type||"audio");
+      copy.append(name,detail);
+      const meta=document.createElement("span");
+      meta.className="call-history-meta";
+      meta.textContent=(call.status||"call")+"\n"+new Date(call.created_at).toLocaleDateString();
+      row.append(icon,copy,meta);
+      row.title="Open conversation";
+      row.addEventListener("click",async()=>{
+        const conv=state.conversations.find(c=>c.conversationId===call.conversation_id);
+        if(conv)await openConversation(call.conversation_id,conv.profile);
+        else if(profile)await startConversation(profile.id);
+        switchSection("chats");
+      });
+      list.append(row);
+    }
+  }
+     async function updateCallStatus(status){
+    if(!callState.id)return;
+    const id=callState.id;
+    const {error}=await db.from("call_sessions").update({status}).eq("id",id);
+    if(error)throw error;
+    if(status==="accepted"){
+      callState.accepted=true;
+      callEl("incomingCallActions").classList.add("hidden");
+      setCallStatus("Preparing connection…");
+      if(callState.offer)await answerIncomingOffer();
+    }else{
+      try{await sendCallSignal("hangup",{status});}catch{}
+      await cleanupCall();
+    }
+  }
+  async function cleanupCall(){
+    if(callState.timer){clearInterval(callState.timer);callState.timer=null;}
+    if(callState.stream){callState.stream.getTracks().forEach(t=>t.stop());callState.stream=null;}
+    if(callState.peer){callState.peer.ontrack=null;callState.peer.onicecandidate=null;callState.peer.close();callState.peer=null;}
+    if(callState.signals){await db.removeChannel(callState.signals);callState.signals=null;}
+    if(callState.status){await db.removeChannel(callState.status);callState.status=null;}
+    callEl("localVideo").srcObject=null;
+    callEl("remoteVideo").srcObject=null;
+    callEl("remoteAudio").srcObject=null;
+    callEl("incomingCallActions").classList.add("hidden");
+    callEl("callScreen").classList.add("hidden");
+    callState.id=null;callState.type=null;callState.partnerId=null;
+    callState.incoming=null;callState.offer=null;callState.ice=[];
+    callState.accepted=false;callState.muted=false;callState.camera=true;
+    callState.startedAt=null;
+    callEl("callTimer").textContent="00:00";
+    callEl("muteCallBtn").classList.remove("is-off");
+    callEl("cameraCallBtn").classList.remove("is-off");
+  }
+     function bindCallEvents(){
+    $("audioCallMenuItem").addEventListener("click",()=>startCall("audio"));
+    $("videoCallMenuItem").addEventListener("click",()=>startCall("video"));
+    $("acceptCallBtn").addEventListener("click",async()=>{try{await acquireCallMedia();await updateCallStatus("accepted");}catch(e){toast("Could not accept call: "+errorText(e));}});
+    $("declineCallBtn").addEventListener("click",()=>updateCallStatus("declined").catch(e=>toast(errorText(e))));
+    $("endCallBtn").addEventListener("click",()=>updateCallStatus("ended").catch(e=>toast(errorText(e))));
+    $("closeCallBtn").addEventListener("click",()=>updateCallStatus("ended").catch(e=>toast(errorText(e))));
+    $("muteCallBtn").addEventListener("click",()=>{if(!callState.stream)return;callState.muted=!callState.muted;callState.stream.getAudioTracks().forEach(t=>t.enabled=!callState.muted);$("muteCallBtn").classList.toggle("is-off",callState.muted);$("muteCallBtn").title=callState.muted?"Unmute microphone":"Mute microphone";});
+    $("cameraCallBtn").addEventListener("click",()=>{if(callState.type!=="video"||!callState.stream)return;callState.camera=!callState.camera;callState.stream.getVideoTracks().forEach(t=>t.enabled=callState.camera);$("cameraCallBtn").classList.toggle("is-off",!callState.camera);$("cameraCallBtn").title=callState.camera?"Turn camera off":"Turn camera on";});
+  }
+       async function signOut(){
+    try{
+      await cleanupCall();
+      if(callState.incomingChannel){
+        await db.removeChannel(callState.incomingChannel);
+        callState.incomingChannel=null;
+      }
+      const {error}=await db.auth.signOut();
+      if(error)throw error;
+      cleanChannels();
+      state.user=null;
+      state.conversation=null;
+      showSignedOut();
+    }catch(e){
+      toast("Could not sign out: "+errorText(e));
+    }
+  }
+
+  if(!db){
+    showAuthError("Supabase client did not load. Check your connection and refresh.");
+    return;
+  }
+
+  bindEvents();
+  bindCallEvents();
+
+  db.auth.onAuthStateChange((event,session)=>{
+    if(session?.user){
+      state.user=session.user;
+      showApp();
+      loadInitialData().catch(e=>toast("Could not load chats: "+errorText(e)));
+    }else{
+      state.user=null;
+      showSignedOut();
+    }
+  });
+
+  db.auth.getSession().then(({data,error})=>{
+    if(error)throw error;
+    if(data.session?.user){
+      state.user=data.session.user;
+      showApp();
+      loadInitialData().catch(e=>toast("Could not load chats: "+errorText(e)));
+    }else{
+      showSignedOut();
+    }
+  }).catch(e=>showAuthError(errorText(e)));
+})();
