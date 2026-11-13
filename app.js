@@ -86,6 +86,44 @@ function cancelReply() {
   $("replyPreviewText").textContent = "";
 }
   async function mediaSignedUrl(path){if(!path)return null;const {data,error}=await db.storage.from("chat-media").createSignedUrl(path,3600);if(error)throw error;return data.signedUrl;}
+   async function openImageViewer(path) {
+  try {
+    const { data, error } = await db.storage
+      .from("chat-media")
+      .createSignedUrl(path, 3600);
+
+    if (error) throw error;
+
+    const viewer = document.createElement("div");
+    viewer.className = "image-viewer";
+
+    const header = document.createElement("div");
+    header.className = "image-viewer-header";
+
+    const close = document.createElement("button");
+    close.textContent = "✕";
+    close.className = "image-viewer-close";
+    close.onclick = () => viewer.remove();
+
+    const download = document.createElement("a");
+    download.textContent = "⬇ Download";
+    download.className = "image-viewer-download";
+    download.href = data.signedUrl;
+    download.target = "_blank";
+    download.rel = "noopener";
+    download.download = "u-ni-chat-photo";
+
+    const image = document.createElement("img");
+    image.src = data.signedUrl;
+    image.alt = "Full-screen photo";
+
+    header.append(close, download);
+    viewer.append(header, image);
+    document.body.append(viewer);
+  } catch (error) {
+    toast("Could not open photo: " + error.message);
+  }
+}
  async function renderMessage(message) {
   if (!message?.id || state.loaded.has(message.id)) return;
   state.loaded.add(message.id);
@@ -142,12 +180,15 @@ if (message.reply_to_message_id) {
   ) {
     try {
       const url = await mediaSignedUrl(message.attachment_path);
-      if (message.message_type === "image") {
-        const img = document.createElement("img");
-        img.src = url;
-        img.alt = "Shared image";
-        wrap.append(img);
-      } else {
+       if (message.message_type === "image") {
+  const img = document.createElement("img");
+  img.src = url;
+  img.alt = "Shared image";
+  img.style.cursor = "zoom-in";
+  img.addEventListener("click", () => openImageViewer(message.attachment_path));
+  wrap.append(img);
+}
+       else {
         const video = document.createElement("video");
         video.src = url;
         video.controls = true;
