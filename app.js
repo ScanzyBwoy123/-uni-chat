@@ -464,7 +464,10 @@ async function startPresence(){
 
   state.presenceTimer=setInterval(updateLastSeen,30000);
 }
-  async function initialize(user){if(!user||!db)return;if(state.initializedUserId===user.id)return;state.initializedUserId=user.id;state.user=user;ui.auth.classList.add("hidden");ui.app.classList.remove("hidden");$("mobileNav").classList.remove("hidden");switchSection("chats");try{await loadMyProfile();await loadPeople();await loadConversations();await loadStatuses();subscribeInbox();subscribeToIncomingCalls().catch(e=>console.warn("Incoming call setup:",e));loadCallHistory().catch(e=>console.warn("Call history:",e));setComposerEnabled(false);}catch(e){state.initializedUserId=null;console.error(e);toast("Some account data could not be loaded: "+errorText(e));}}
+  async function initialize(user){if(!user||!db)return;if(state.initializedUserId===user.id)return;state.initializedUserId=user.id;state.user=user;ui.auth.classList.add("hidden");ui.app.classList.remove("hidden");$("mobileNav").classList.remove("hidden");switchSection("chats");try{await loadMyProfile();
+await loadPeople();
+await startPresence();
+await loadConversations();await loadStatuses();subscribeInbox();subscribeToIncomingCalls().catch(e=>console.warn("Incoming call setup:",e));loadCallHistory().catch(e=>console.warn("Call history:",e));setComposerEnabled(false);}catch(e){state.initializedUserId=null;console.error(e);toast("Some account data could not be loaded: "+errorText(e));}}
   function bindEvents(){
      $("cancelReplyBtn").addEventListener("click", cancelReply);
     $("showLoginBtn").addEventListener("click",showLoginMode);$("showSignupBtn").addEventListener("click",showSignupMode);
