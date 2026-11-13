@@ -143,6 +143,35 @@ let inboxRealtimeChannel = null;
 let inboxRefreshTimer = null;
 let editingMessageId = null;
 let messageActionMenu = null;
+// ---------------- MAIN INBOX MENU ----------------
+
+mainMenuBtn.addEventListener("click", (event) => {
+  event.stopPropagation();
+
+  const isOpen = !mainMenu.classList.contains("hidden");
+
+  mainMenu.classList.toggle("hidden", isOpen);
+  mainMenuBtn.setAttribute("aria-expanded", String(!isOpen));
+});
+
+// Close menu when clicking outside
+document.addEventListener("click", (event) => {
+  if (
+    !mainMenu.contains(event.target) &&
+    !mainMenuBtn.contains(event.target)
+  ) {
+    mainMenu.classList.add("hidden");
+    mainMenuBtn.setAttribute("aria-expanded", "false");
+  }
+});
+
+// Close menu when an option is selected
+mainMenu.addEventListener("click", (event) => {
+  if (event.target.closest("button")) {
+    mainMenu.classList.add("hidden");
+    mainMenuBtn.setAttribute("aria-expanded", "false");
+  }
+});
 // ---------------- OFFLINE MESSAGE STORAGE ----------------
 
 const OFFLINE_DB_NAME = "uni-chat-local";
