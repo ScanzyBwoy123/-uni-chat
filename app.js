@@ -294,3 +294,37 @@ if (message.reply_to_message_id) {
       toast("Could not start call: "+errorText(err));
     }
   }
+  async function updateCallStatus(status){
+    if(!callState.id)return;
+    const id=callState.id;
+    const {error}=await db.from("call_sessions").update({status}).eq("id",id);
+    if(error)throw error;
+    if(status==="accepted"){
+      callState.accepted=true;
+      callEl("incomingCallActions").classList.add("hidden");
+      setCallStatus("Preparing connection…");
+      if(callState.offer)await answerIncomingOffer();
+    }else{
+      try{await sendCallSignal("hangup",{status});}catch{}
+      await cleanupCall();
+    }
+  }
+  async function cleanupCall(){
+    if(callState.timer){clearInterval(callState.timer);callState.timer=null;}
+    if(callState.stream){callState.stream.getTracks().forEach(t=>t.stop());callState.stream=null;}
+    if(callState.peer){callState.peer.ontrack=null;callState.peer.onicecandidate=null;callState.peer.close();callState.peer=null;}
+    if(callState.signals){await db.removeChannel(callState.signals);callState.signals=null;}
+    if(callState.status){await db.removeChannel(callState.status);callState.status=null;}
+    callEl("localVideo").srcObject=null;
+    callEl("remoteVideo").srcObject=null;
+    callEl("remoteAudio").srcObject=null;
+    callEl("incomingCallActions").classList.add("hidden");
+    callEl("callScreen").classList.add("hidden");
+    callState.id=null;callState.type=null;callState.partnerId=null;
+    callState.incoming=null;callState.offer=null;callState.ice=[];
+    callState.accepted=false;callState.muted=false;callState.camera=true;
+    callState.startedAt=null;
+    callEl("callTimer").textContent="00:00";
+    callEl("muteCallBtn").classList.remove("is-off");
+    callEl("cameraCallBtn").classList.remove("is-off");
+  }
