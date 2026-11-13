@@ -41,6 +41,17 @@ const peopleSearch = document.getElementById("peopleSearch");
 const peopleCount = document.getElementById("peopleCount");
 const peopleList = document.getElementById("peopleList");
 const backToPeopleBtn = document.getElementById("backToPeopleBtn");
+// Main inbox menu controls
+const newChatBtn = document.getElementById("newChatBtn");
+const mainMenuBtn = document.getElementById("mainMenuBtn");
+const mainMenu = document.getElementById("mainMenu");
+
+const menuProfileBtn = document.getElementById("menuProfileBtn");
+const menuSettingsBtn = document.getElementById("menuSettingsBtn");
+const menuPrivacyBtn = document.getElementById("menuPrivacyBtn");
+const menuNotificationsBtn = document.getElementById("menuNotificationsBtn");
+const menuHelpBtn = document.getElementById("menuHelpBtn");
+const menuLogoutBtn = document.getElementById("menuLogoutBtn");
 // Profile picture controls
 const myProfileAvatar = document.getElementById("myProfileAvatar");
 const myProfileAvatarFallback = document.getElementById("myProfileAvatarFallback");
