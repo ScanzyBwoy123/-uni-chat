@@ -29,7 +29,10 @@
   chunks: [],
   replyTo: null,
   statusColor: "#087f5b",
-  avatarUrl: null
+  avatarUrl: null,
+presenceChannel: null,
+presenceTimer: null,
+onlineUsers: new Set()
 };
   const callState = { id:null, type:null, partnerId:null, peer:null, stream:null, signals:null, status:null, incoming:null, offer:null, ice:[], accepted:false, muted:false, camera:true, timer:null, startedAt:null, incomingChannel:null, history:[] };
   const VAPID_PUBLIC_KEY = "BCKiDBhZsdtjkWRAoNZDYb-JCqRDu8v3xjWSueeAmHymIzeYbBqU3BSVoJ6-C8GBqoEpTVzNlR7-72Bu_-gKcUc";
