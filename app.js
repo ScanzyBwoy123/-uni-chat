@@ -90,38 +90,42 @@ function cancelReply() {
   if (!message?.id || state.loaded.has(message.id)) return;
   state.loaded.add(message.id);
   const wrap = document.createElement("article");
-  wrap.className = "message " + (
-       if (message.reply_to_message_id) {
-    const { data: original } = await db
-      .from("messages")
-      .select("id, body, message_type, sender_id")
-      .eq("id", message.reply_to_message_id)
-      .eq("conversation_id", state.conversation)
-      .maybeSingle();
 
-    if (original) {
-      const quote = document.createElement("div");
-      quote.className = "reply-quote";
+wrap.className = "message " + (
+  message.sender_id === state.user.id ? "sent" : "received"
+);
 
-      const label = document.createElement("strong");
-      label.textContent =
-        original.sender_id === state.user.id ? "You" : "Replied message";
+if (message.reply_to_message_id) {
+  const { data: original } = await db
+    .from("messages")
+    .select("id, body, message_type, sender_id")
+    .eq("id", message.reply_to_message_id)
+    .eq("conversation_id", state.conversation)
+    .maybeSingle();
 
-      const text = document.createElement("div");
-      text.textContent =
-        original.body ||
-        ({
-          image: "📷 Photo",
-          video: "🎥 Video",
-          voice: "🎤 Voice message"
-        }[original.message_type] || "Attachment");
+  if (original) {
+    const quote = document.createElement("div");
+    quote.className = "reply-quote";
 
-      quote.append(label, text);
-      wrap.append(quote);
-    }
+    const label = document.createElement("strong");
+    label.textContent =
+      original.sender_id === state.user.id
+        ? "You"
+        : "Replied message";
+
+    const text = document.createElement("div");
+    text.textContent =
+      original.body ||
+      ({
+        image: "📷 Photo",
+        video: "🎥 Video",
+        voice: "🎤 Voice message"
+      }[original.message_type] || "Attachment");
+
+    quote.append(label, text);
+    wrap.append(quote);
   }
-    message.sender_id === state.user.id ? "sent" : "received"
-  );
+}
   if (message.message_type === "voice" && message.attachment_path) {
     const audio = document.createElement("audio");
     audio.controls = true;
