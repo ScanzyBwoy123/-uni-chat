@@ -258,6 +258,28 @@ if (message.reply_to_message_id) {
   async function sendCallSignal(type,payload){if(!callState.id||!callState.partnerId||!state.user)throw new Error("Call session is not ready.");const {error}=await db.from("call_signals").insert({call_id:callState.id,sender_id:state.user.id,recipient_id:callState.partnerId,signal_type:type,payload});if(error)throw error;}
   function createCallPeer(){if(callState.peer)callState.peer.close();callState.peer=new RTCPeerConnection({iceServers:[{urls:"stun:stun.l.google.com:19302"},{urls:"stun:stun1.l.google.com:19302"}]});const pc=callState.peer;pc.onicecandidate=e=>{if(e.candidate)sendCallSignal("ice-candidate",e.candidate.toJSON()).catch(err=>{console.error(err);setCallStatus("Network signalling failed");});};pc.ontrack=e=>{const stream=e.streams[0];if(callState.type==="video"){callEl("remoteVideo").srcObject=stream;callEl("remoteVideo").classList.remove("hidden");callEl("remoteAudio").srcObject=null;}else{callEl("remoteAudio").srcObject=stream;callEl("remoteAudio").play().catch(()=>{});}};pc.onconnectionstatechange=()=>{if(pc.connectionState==="connected"){setCallStatus("Connected");if(!callState.timer)setCallTimer();}else if(pc.connectionState==="failed"){setCallStatus("Connection failed — try ending and calling again.");}else if(pc.connectionState==="disconnected"){setCallStatus("Connection interrupted…");}};return pc;}
   async function acquireCallMedia(){
+  if(!navigator.mediaDevices?.getUserMedia){
+    throw new Error("Camera and microphone access requires HTTPS or localhost.");
+  }
+
+  callState.stream=await navigator.mediaDevices.getUserMedia({
+    audio:true,
+    video:callState.type==="video"?{facingMode:"user"}:false
+  });
+
+  if(callState.type==="video"){
+    callEl("localVideo").srcObject=callState.stream;
+    callEl("localVideo").classList.remove("hidden");
+    callEl("callAvatar").classList.add("hidden");
+  }else{
+    callEl("localVideo").srcObject=null;
+    callEl("localVideo").classList.add("hidden");
+    callEl("remoteVideo").classList.add("hidden");
+    callEl("callAvatar").classList.remove("hidden");
+  }
+
+  return callState.stream;
+}
     async function startCall(type){
     if(!state.user||!state.conversation)return toast("Open a conversation first.");
     if(callState.id)return toast("A call is already active.");
