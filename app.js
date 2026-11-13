@@ -258,3 +258,39 @@ if (message.reply_to_message_id) {
   async function sendCallSignal(type,payload){if(!callState.id||!callState.partnerId||!state.user)throw new Error("Call session is not ready.");const {error}=await db.from("call_signals").insert({call_id:callState.id,sender_id:state.user.id,recipient_id:callState.partnerId,signal_type:type,payload});if(error)throw error;}
   function createCallPeer(){if(callState.peer)callState.peer.close();callState.peer=new RTCPeerConnection({iceServers:[{urls:"stun:stun.l.google.com:19302"},{urls:"stun:stun1.l.google.com:19302"}]});const pc=callState.peer;pc.onicecandidate=e=>{if(e.candidate)sendCallSignal("ice-candidate",e.candidate.toJSON()).catch(err=>{console.error(err);setCallStatus("Network signalling failed");});};pc.ontrack=e=>{const stream=e.streams[0];if(callState.type==="video"){callEl("remoteVideo").srcObject=stream;callEl("remoteVideo").classList.remove("hidden");callEl("remoteAudio").srcObject=null;}else{callEl("remoteAudio").srcObject=stream;callEl("remoteAudio").play().catch(()=>{});}};pc.onconnectionstatechange=()=>{if(pc.connectionState==="connected"){setCallStatus("Connected");if(!callState.timer)setCallTimer();}else if(pc.connectionState==="failed"){setCallStatus("Connection failed — try ending and calling again.");}else if(pc.connectionState==="disconnected"){setCallStatus("Connection interrupted…");}};return pc;}
   async function acquireCallMedia(){
+    async function startCall(type){
+    if(!state.user||!state.conversation)return toast("Open a conversation first.");
+    if(callState.id)return toast("A call is already active.");
+    try{
+      callState.type=type;
+      callState.partnerId=state.conversation.userId;
+      callState.ice=[];
+      callState.accepted=true;
+      showCallUI();
+      callEl("callPersonName").textContent=state.conversation.name||"Calling…";
+      callEl("callAvatar").textContent=(state.conversation.name||"U").slice(0,1).toUpperCase();
+      setCallStatus("Starting call…");
+      await acquireCallMedia();
+      const {data:call,error}=await db.from("call_sessions").insert({
+        conversation_id:state.conversation.id,
+        caller_id:state.user.id,
+        callee_id:callState.partnerId,
+        call_type:type,
+        status:"ringing"
+      }).select().single();
+      if(error)throw error;
+      callState.id=call.id;
+      await subscribeCallSignals();
+      await subscribeCallStatus();
+      const pc=createCallPeer();
+      callState.stream.getTracks().forEach(track=>pc.addTrack(track,callState.stream));
+      const offer=await pc.createOffer();
+      await pc.setLocalDescription(offer);
+      await sendCallSignal("offer",offer);
+      setCallStatus("Ringing…");
+    }catch(err){
+      console.error("Call start failed",err);
+      await cleanupCall();
+      toast("Could not start call: "+errorText(err));
+    }
+  }
