@@ -146,3 +146,24 @@
     flex-shrink: 0;
   }
 }
+/* WhatsApp-style quoted replies */
+.reply-quote {
+  padding: 8px 11px;
+  margin-bottom: 8px;
+  border-left: 3px solid #087f5b;
+  border-radius: 7px;
+  background: rgba(8, 127, 91, 0.09);
+  overflow-wrap: anywhere;
+}
+
+.reply-quote strong {
+  display: block;
+  color: #087f5b;
+  font-size: 11px;
+  margin-bottom: 3px;
+}
+
+.reply-quote div {
+  font-size: 12px;
+  color: #52615a;
+}
