@@ -301,7 +301,36 @@ async function deleteMessageForEveryone(message) {
   loadConversations().catch(() => {});
 }
   function scrollBottom(){ui.messages.scrollTop=ui.messages.scrollHeight;}
-  function subscribeMessages(id){state.messageChannel=db.channel("private-chat-"+id).on("postgres_changes",{event:"INSERT",schema:"public",table:"messages",filter:"conversation_id=eq."+id},payload=>{if(state.conversation===id){renderMessage(payload.new);loadConversations().catch(()=>{});}}).subscribe(status=>{$("connectionStatus").textContent=status==="SUBSCRIBED"?"Connected":status==="CHANNEL_ERROR"?"Connection problem":"Connecting…";});}
+  function subscribeMessages(id) {
+  state.messageChannel = db.channel("private-chat-" + id)
+    .on("postgres_changes", {
+      event: "INSERT",
+      schema: "public",
+      table: "messages",
+      filter: "conversation_id=eq." + id
+    }, payload => {
+      if (state.conversation === id) {
+        renderMessage(payload.new);
+        loadConversations().catch(() => {});
+      }
+    })
+    .on("postgres_changes", {
+      event: "UPDATE",
+      schema: "public",
+      table: "messages",
+      filter: "conversation_id=eq." + id
+    }, payload => {
+      if (state.conversation === id && payload.new.deleted_for_everyone) {
+        refreshMessages().catch(() => {});
+        loadConversations().catch(() => {});
+      }
+    })
+    .subscribe(status => {
+      $("connectionStatus").textContent =
+        status === "SUBSCRIBED" ? "Connected" :
+        status === "CHANNEL_ERROR" ? "Connection problem" : "Connecting…";
+    });
+}
   async function sendTextMessage(body) {
   const { data, error } = await db
     .from("messages")
