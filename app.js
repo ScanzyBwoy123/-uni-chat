@@ -62,6 +62,29 @@
   async function fetchProfileFromConversation(id){const {data:members}=await db.from("conversation_members").select("user_id").eq("conversation_id",id);const other=members?.find(m=>m.user_id!==state.user.id);return other?fetchProfile(other.user_id):null;}
   async function loadMessages(){const {data,error}=await db.from("messages").select("*").eq("conversation_id",state.conversation).eq("deleted_for_everyone",false).order("created_at",{ascending:true});if(error){renderSystem("Unable to load messages.");toast(errorText(error));return;}const {data:hidden}=await db.from("message_user_hides").select("message_id").eq("user_id",state.user.id);const hiddenIds=new Set((hidden||[]).map(x=>x.message_id));const visible=(data||[]).filter(m=>!hiddenIds.has(m.id));ui.messages.replaceChildren();if(!visible.length)renderSystem("Your conversation starts here.");visible.forEach(renderMessage);saveOfflineMessages(visible).catch(()=>{});scrollBottom();}
   function renderSystem(text){const el=document.createElement("div");el.className="system-message";el.textContent=text;ui.messages.append(el);}
+   function startReply(message) {
+  state.replyTo = message;
+
+  const preview = $("replyPreview");
+  const previewText = $("replyPreviewText");
+
+  const text =
+    message.body ||
+    (message.message_type === "image" ? "📷 Photo" :
+    message.message_type === "video" ? "🎥 Video" :
+    message.message_type === "voice" ? "🎤 Voice message" :
+    "Attachment");
+
+  previewText.textContent = text;
+  preview.classList.remove("hidden");
+  ui.message.focus();
+}
+
+function cancelReply() {
+  state.replyTo = null;
+  $("replyPreview").classList.add("hidden");
+  $("replyPreviewText").textContent = "";
+}
   async function mediaSignedUrl(path){if(!path)return null;const {data,error}=await db.storage.from("chat-media").createSignedUrl(path,3600);if(error)throw error;return data.signedUrl;}
   async function renderMessage(message){if(!message?.id||state.loaded.has(message.id))return;state.loaded.add(message.id);const wrap=document.createElement("article");wrap.className="message "+(message.sender_id===state.user.id?"sent":"received");if(message.message_type==="voice"&&message.attachment_path){const audio=document.createElement("audio");audio.controls=true;try{audio.src=await mediaSignedUrl(message.attachment_path);}catch{audio.textContent="Voice message unavailable";}wrap.append(audio);}else if((message.message_type==="image"||message.message_type==="video")&&message.attachment_path){try{const url=await mediaSignedUrl(message.attachment_path);if(message.message_type==="image"){const img=document.createElement("img");img.src=url;img.alt="Shared image";wrap.append(img);}else{const video=document.createElement("video");video.src=url;video.controls=true;video.playsInline=true;wrap.append(video);}}catch{const p=document.createElement("span");p.textContent="Attachment unavailable";wrap.append(p);}}else{const body=document.createElement("div");body.textContent=message.body||"Attachment";wrap.append(body);}const time=document.createElement("small");time.className="message-time";time.textContent=new Date(message.created_at).toLocaleTimeString([],{hour:"2-digit",minute:"2-digit"});wrap.append(time);ui.messages.append(wrap);scrollBottom();}
   function scrollBottom(){ui.messages.scrollTop=ui.messages.scrollHeight;}
