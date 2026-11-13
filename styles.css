@@ -89,6 +89,7 @@
 /* Universal mobile chat composer fix */
 @media (max-width: 650px) {
   #chatPanel.mobile-open {
+    z-index: 30;
     position: fixed;
     inset: 0;
     width: 100%;
