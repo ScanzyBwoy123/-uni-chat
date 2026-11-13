@@ -171,17 +171,48 @@ if (message.reply_to_message_id) {
     { hour: "2-digit", minute: "2-digit" }
   );
   wrap.append(time);
-  const replyButton = document.createElement("button");
-  replyButton.type = "button";
-  replyButton.className = "message-reply-btn";
-  replyButton.textContent = "↩ Reply";
-  replyButton.addEventListener("click", () => {
-    startReply(message);
+    ui.messages.append(wrap);
+
+  let holdTimer = null;
+  let holdStart = null;
+
+  const clearHold = () => {
+    if (holdTimer) clearTimeout(holdTimer);
+    holdTimer = null;
+  };
+
+  wrap.addEventListener("pointerdown", event => {
+    if (event.target.closest("audio,video,button")) return;
+
+    holdStart = { x: event.clientX, y: event.clientY };
+    clearHold();
+
+    holdTimer = setTimeout(() => {
+      showMessageMenu(message, holdStart.x, holdStart.y);
+      holdTimer = null;
+    }, 550);
   });
-  wrap.append(replyButton);
-  ui.messages.append(wrap);
+
+  wrap.addEventListener("pointermove", event => {
+    if (holdStart && Math.hypot(event.clientX - holdStart.x, event.clientY - holdStart.y) > 12) {
+      clearHold();
+    }
+  });
+
+  ["pointerup", "pointercancel", "pointerleave"].forEach(type => {
+    wrap.addEventListener(type, () => {
+      clearHold();
+      holdStart = null;
+    });
+  });
+
+  wrap.addEventListener("contextmenu", event => {
+    event.preventDefault();
+    showMessageMenu(message, event.clientX, event.clientY);
+  });
+
   scrollBottom();
-} 
+}
   function scrollBottom(){ui.messages.scrollTop=ui.messages.scrollHeight;}
   function subscribeMessages(id){state.messageChannel=db.channel("private-chat-"+id).on("postgres_changes",{event:"INSERT",schema:"public",table:"messages",filter:"conversation_id=eq."+id},payload=>{if(state.conversation===id){renderMessage(payload.new);loadConversations().catch(()=>{});}}).subscribe(status=>{$("connectionStatus").textContent=status==="SUBSCRIBED"?"Connected":status==="CHANNEL_ERROR"?"Connection problem":"Connecting…";});}
   async function sendTextMessage(body) {
