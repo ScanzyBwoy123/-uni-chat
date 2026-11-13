@@ -8,7 +8,29 @@
     auth: { persistSession: true, autoRefreshToken: true, detectSessionInUrl: true }
   });
   const $ = id => document.getElementById(id);
-  const state = { user:null, profile:null, people:[], conversations:[], conversation:null, partner:null, messageChannel:null, inboxChannel:null, statusChannel:null, loaded:new Set(), statusGroups:new Map(), activeStatuses:[], activeStatusIndex:0, selectedFile:null, previewUrl:null, recorder:null, stream:null, chunks:[], statusColor:"#087f5b", avatarUrl:null };
+  const state = {
+  user: null,
+  profile: null,
+  people: [],
+  conversations: [],
+  conversation: null,
+  partner: null,
+  messageChannel: null,
+  inboxChannel: null,
+  statusChannel: null,
+  loaded: new Set(),
+  statusGroups: new Map(),
+  activeStatuses: [],
+  activeStatusIndex: 0,
+  selectedFile: null,
+  previewUrl: null,
+  recorder: null,
+  stream: null,
+  chunks: [],
+  replyTo: null,
+  statusColor: "#087f5b",
+  avatarUrl: null
+};
   const callState = { id:null, type:null, partnerId:null, peer:null, stream:null, signals:null, status:null, incoming:null, offer:null, ice:[], accepted:false, muted:false, camera:true, timer:null, startedAt:null, incomingChannel:null, history:[] };
   const VAPID_PUBLIC_KEY = "BCKiDBhZsdtjkWRAoNZDYb-JCqRDu8v3xjWSueeAmHymIzeYbBqU3BSVoJ6-C8GBqoEpTVzNlR7-72Bu_-gKcUc";
   const ui = {
