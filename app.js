@@ -437,6 +437,7 @@ async function deleteMessageForEveryone(message) {
   let didSwipe=false;
 
   handle.style.touchAction="none";
+  handle.style.minHeight="55px";
 
   handle.addEventListener("pointerdown",e=>{
     startY=e.clientY;
@@ -456,6 +457,10 @@ async function deleteMessageForEveryone(message) {
         panel.classList.remove("expanded");
       }
     }
+  });
+
+  handle.addEventListener("pointercancel",()=>{
+    didSwipe=false;
   });
 
   handle.addEventListener("click",()=>{
