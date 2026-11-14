@@ -458,6 +458,9 @@ async function deleteMessageForEveryone(message) {
    async function loadStatusViewers(item){
   const panel=$("statusViewerViews");
   const list=$("statusViewerViewList");
+   setupStatusViewerSwipe();
+panel.classList.remove("expanded");
+$("statusViewerHandle").querySelector("small").textContent="Swipe up to see viewers";
   panel.classList.add("hidden");
   list.replaceChildren();
 
