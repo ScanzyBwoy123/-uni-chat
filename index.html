@@ -168,6 +168,7 @@
   <div id="statusViewer" class="status-viewer hidden" role="dialog" aria-modal="true">
     <header><button id="closeStatusViewer" type="button" aria-label="Close"><svg><use href="#i-close"/></svg></button><strong id="statusViewerName">Status</strong><span id="statusViewerTime"></span></header>
     <div id="statusViewerProgress" class="status-viewer-progress"></div><div id="statusViewerContent" class="status-viewer-content"></div>
+<div id="statusViewerViews" class="status-viewer-views hidden"><strong>Viewed by</strong><div id="statusViewerViewList"></div></div>
   </div>
   <div id="profileModal" class="modal-backdrop hidden" role="dialog" aria-modal="true" aria-labelledby="profileModalTitle">
     <div class="modal-card"><header class="modal-header"><h2 id="profileModalTitle">Your profile</h2><button class="icon-button close-modal" type="button" aria-label="Close"><svg><use href="#i-close"/></svg></button></header><label for="profileNameInput">Display name</label><input id="profileNameInput" maxlength="40"><label for="profileUsernameInput">Username</label><input id="profileUsernameInput" disabled><p class="muted small">Username editing is not enabled by the inspected profile implementation.</p><button id="saveProfileBtn" class="primary-btn" type="button">Save name</button></div>
