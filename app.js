@@ -426,6 +426,46 @@ async function deleteMessageForEveryone(message) {
   async function saveOfflineMessages(messages){if(!state.user||!state.conversation||!messages.length||!("indexedDB" in window))return;const dbx=await openOfflineDB();return new Promise((resolve,reject)=>{const tx=dbx.transaction("messages","readwrite");messages.forEach(m=>tx.objectStore("messages").put({cacheKey:`${state.user.id}:${state.conversation}:${m.id}`,userId:state.user.id,conversationId:state.conversation,message:m}));tx.oncomplete=()=>{dbx.close();resolve();};tx.onerror=()=>{dbx.close();reject(tx.error);};});}
   async function loadStatuses(){if(!state.user)return;ui.statusList.replaceChildren();const {data:statuses,error}=await db.from("status_updates").select("id,user_id,status_type,text_content,media_path,background_color,created_at,expires_at").gt("expires_at",new Date().toISOString()).order("created_at",{ascending:false}).limit(100);if(error){ui.statusList.textContent="Unable to load updates: "+error.message;return;}const ids=[...new Set([state.user.id,...(statuses||[]).map(s=>s.user_id)])];const {data:profiles}=await db.from("profiles").select("id,display_name,avatar_path").in("id",ids);const map=new Map((profiles||[]).map(p=>[p.id,p]));const grouped=new Map();(statuses||[]).forEach(s=>{if(!grouped.has(s.user_id))grouped.set(s.user_id,[]);grouped.get(s.user_id).push(s);});state.statusGroups=grouped;const {data:views}=await db.from("status_views").select("status_id").eq("viewer_id",state.user.id).in("status_id",(statuses||[]).map(s=>s.id).filter(Boolean));const viewed=new Set((views||[]).map(v=>v.status_id));function row(uid,mine){const profile=map.get(uid)||{};const items=grouped.get(uid)||[];const el=document.createElement("button");el.type="button";el.className="status-item";const ring=document.createElement("span");ring.className="status-ring"+(items.every(s=>viewed.has(s.id))?" viewed":"");const src=avatarUrl(profile.avatar_path);if(src){const img=document.createElement("img");img.src=src;img.alt="";ring.append(img);}else{const fallback=document.createElement("span");fallback.className="status-fallback";fallback.textContent=(profile.display_name||"U").slice(0,1).toUpperCase();ring.append(fallback);}const copy=document.createElement("span");const strong=document.createElement("strong");strong.textContent=mine?"Your status":profile.display_name||"u n i chat member";const small=document.createElement("small");small.textContent=items.length?new Date(items[0].created_at).toLocaleString():"No updates yet";copy.append(strong,small);el.append(ring,copy);el.addEventListener("click",()=>items.length?openStatusViewer(items,profile.display_name||"Your status"):openActionSheet());return el;}const mine=row(state.user.id,true);ui.statusList.append(mine);[...grouped.keys()].filter(id=>id!==state.user.id).forEach(id=>ui.statusList.append(row(id,false)));if(!statuses?.length){const note=document.createElement("div");note.className="empty-state";note.textContent="No updates yet. Share the first one.";ui.statusList.append(note);}}
   async function openStatusViewer(items,name){state.activeStatuses=[...items].sort((a,b)=>new Date(a.created_at)-new Date(b.created_at));state.activeStatusIndex=0;$("statusViewer").classList.remove("hidden");$("statusViewerName").textContent=name;await renderStatus();}
+   async function loadStatusViewers(item){
+  const panel=$("statusViewerViews");
+  const list=$("statusViewerViewList");
+  panel.classList.add("hidden");
+  list.replaceChildren();
+
+  if(item.user_id!==state.user.id)return;
+
+  const {data:views,error}=await db.from("status_views")
+    .select("viewer_id,viewed_at")
+    .eq("status_id",item.id)
+    .order("viewed_at",{ascending:false});
+
+  if(error){console.warn(error);return;}
+  if(!views||!views.length)return;
+
+  const ids=[...new Set(views.map(v=>v.viewer_id))];
+  const {data:profiles}=await db.from("profiles")
+    .select("id,display_name,username")
+    .in("id",ids);
+
+  const profileMap=new Map((profiles||[]).map(p=>[p.id,p]));
+
+  views.forEach(view=>{
+    const profile=profileMap.get(view.viewer_id);
+    const row=document.createElement("div");
+    row.className="status-viewer-person";
+
+    const name=document.createElement("span");
+    name.textContent=profile?.display_name||profile?.username||"User";
+
+    const time=document.createElement("small");
+    time.textContent=new Date(view.viewed_at).toLocaleString();
+
+    row.append(name,time);
+    list.append(row);
+  });
+
+  panel.classList.remove("hidden");
+}
   async function renderStatus(){const item=state.activeStatuses[state.activeStatusIndex];if(!item)return;const content=$("statusViewerContent");content.replaceChildren();$("statusViewerTime").textContent=new Date(item.created_at).toLocaleString();$("statusViewerProgress").replaceChildren();state.activeStatuses.forEach((s,i)=>{const bar=document.createElement("span");bar.style.background=i<=state.activeStatusIndex?"#25d366":"#59625c";$("statusViewerProgress").append(bar);});if(item.status_type==="text"){content.textContent=item.text_content||"";content.style.background=item.background_color||"#087f5b";}else{try{const {data,error}=await db.storage.from("status-media").createSignedUrl(item.media_path,3600);if(error)throw error;if(item.status_type==="image"){const img=document.createElement("img");img.src=data.signedUrl;img.alt="Status photo";content.append(img);}else{const video=document.createElement("video");video.src=data.signedUrl;video.controls=true;video.autoplay=true;video.playsInline=true;content.append(video);}}catch(e){content.textContent="Unable to load this update.";}}if(item.text_content&&item.status_type!=="text"){const cap=document.createElement("p");cap.textContent=item.text_content;content.append(cap);}if(item.user_id!==state.user.id){const {error}=await db.from("status_views").insert({status_id:item.id,viewer_id:state.user.id});if(error&&error.code!=="23505")console.warn(error);}}
   function closeStatusViewer(){$("statusViewer").classList.add("hidden");$("statusViewerContent").replaceChildren();}
   function openActionSheet(){$("actionSheet").classList.remove("hidden");}
