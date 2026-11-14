@@ -434,25 +434,19 @@ async function deleteMessageForEveryone(message) {
 
   let startY=0;
 
-  const setExpanded=(expanded)=>{
-    panel.classList.toggle("expanded",expanded);
-    const label=handle.querySelector("small");
-    if(label)label.textContent=expanded?"Swipe down to close":"Swipe up to see viewers";
-  };
-
-  handle.addEventListener("click",()=>{
-    setExpanded(!panel.classList.contains("expanded"));
-  });
-
-  panel.addEventListener("touchstart",e=>{
+  handle.addEventListener("touchstart",e=>{
     startY=e.touches[0].clientY;
   },{passive:true});
 
-  panel.addEventListener("touchend",e=>{
-    const endY=e.changedTouches[0].clientY;
-    const delta=startY-endY;
-    if(delta>35)setExpanded(true);
-    else if(delta< -35)setExpanded(false);
+  handle.addEventListener("touchmove",e=>{
+    e.stopPropagation();
+  },{passive:true});
+
+  handle.addEventListener("touchend",e=>{
+    e.stopPropagation();
+    const delta=startY-e.changedTouches[0].clientY;
+    if(delta>30)panel.classList.add("expanded");
+    if(delta< -30)panel.classList.remove("expanded");
   },{passive:true});
 }
    async function loadStatusViewers(item){
