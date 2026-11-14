@@ -232,3 +232,27 @@
   background: #202923;
   color: white;
   padding: 11px 15px
+.status-viewer-views{
+  padding:12px;
+  background:#fff;
+  color:#26382e;
+  max-height:180px;
+  overflow-y:auto;
+  border-radius:10px;
+}
+.status-viewer-views strong{
+  display:block;
+  margin-bottom:8px;
+}
+.status-viewer-person{
+  display:flex;
+  justify-content:space-between;
+  gap:12px;
+  padding:8px 0;
+  border-top:1px solid #e5ece7;
+  font-size:13px;
+}
+.status-viewer-person small{
+  color:#718078;
+  font-size:11px;
+}
