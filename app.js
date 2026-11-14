@@ -426,6 +426,7 @@ async function deleteMessageForEveryone(message) {
   async function saveOfflineMessages(messages){if(!state.user||!state.conversation||!messages.length||!("indexedDB" in window))return;const dbx=await openOfflineDB();return new Promise((resolve,reject)=>{const tx=dbx.transaction("messages","readwrite");messages.forEach(m=>tx.objectStore("messages").put({cacheKey:`${state.user.id}:${state.conversation}:${m.id}`,userId:state.user.id,conversationId:state.conversation,message:m}));tx.oncomplete=()=>{dbx.close();resolve();};tx.onerror=()=>{dbx.close();reject(tx.error);};});}
   async function loadStatuses(){if(!state.user)return;ui.statusList.replaceChildren();const {data:statuses,error}=await db.from("status_updates").select("id,user_id,status_type,text_content,media_path,background_color,created_at,expires_at").gt("expires_at",new Date().toISOString()).order("created_at",{ascending:false}).limit(100);if(error){ui.statusList.textContent="Unable to load updates: "+error.message;return;}const ids=[...new Set([state.user.id,...(statuses||[]).map(s=>s.user_id)])];const {data:profiles}=await db.from("profiles").select("id,display_name,avatar_path").in("id",ids);const map=new Map((profiles||[]).map(p=>[p.id,p]));const grouped=new Map();(statuses||[]).forEach(s=>{if(!grouped.has(s.user_id))grouped.set(s.user_id,[]);grouped.get(s.user_id).push(s);});state.statusGroups=grouped;const {data:views}=await db.from("status_views").select("status_id").eq("viewer_id",state.user.id).in("status_id",(statuses||[]).map(s=>s.id).filter(Boolean));const viewed=new Set((views||[]).map(v=>v.status_id));function row(uid,mine){const profile=map.get(uid)||{};const items=grouped.get(uid)||[];const el=document.createElement("button");el.type="button";el.className="status-item";const ring=document.createElement("span");ring.className="status-ring"+(items.every(s=>viewed.has(s.id))?" viewed":"");const src=avatarUrl(profile.avatar_path);if(src){const img=document.createElement("img");img.src=src;img.alt="";ring.append(img);}else{const fallback=document.createElement("span");fallback.className="status-fallback";fallback.textContent=(profile.display_name||"U").slice(0,1).toUpperCase();ring.append(fallback);}const copy=document.createElement("span");const strong=document.createElement("strong");strong.textContent=mine?"Your status":profile.display_name||"u n i chat member";const small=document.createElement("small");small.textContent=items.length?new Date(items[0].created_at).toLocaleString():"No updates yet";copy.append(strong,small);el.append(ring,copy);el.addEventListener("click",()=>items.length?openStatusViewer(items,profile.display_name||"Your status"):openActionSheet());return el;}const mine=row(state.user.id,true);ui.statusList.append(mine);[...grouped.keys()].filter(id=>id!==state.user.id).forEach(id=>ui.statusList.append(row(id,false)));if(!statuses?.length){const note=document.createElement("div");note.className="empty-state";note.textContent="No updates yet. Share the first one.";ui.statusList.append(note);}}
   async function openStatusViewer(items,name){state.activeStatuses=[...items].sort((a,b)=>new Date(a.created_at)-new Date(b.created_at));state.activeStatusIndex=0;$("statusViewer").classList.remove("hidden");$("statusViewerName").textContent=name;await renderStatus();}
+
    function setupStatusViewerSwipe(){
   const panel=$("statusViewerViews");
   const handle=$("statusViewerHandle");
@@ -434,41 +435,27 @@ async function deleteMessageForEveryone(message) {
   panel.dataset.swipeReady="true";
 
   let startY=0;
-  let didSwipe=false;
 
   handle.style.touchAction="none";
-  handle.style.minHeight="55px";
 
-  handle.addEventListener("pointerdown",e=>{
-    startY=e.clientY;
-    didSwipe=false;
-    handle.setPointerCapture(e.pointerId);
-  });
+  handle.addEventListener("touchstart",e=>{
+    startY=e.touches[0].clientY;
+    e.stopPropagation();
+  },{passive:true});
 
-  handle.addEventListener("pointerup",e=>{
-    const delta=startY-e.clientY;
+  handle.addEventListener("touchend",e=>{
+    const endY=e.changedTouches[0].clientY;
+    const delta=startY-endY;
 
     if(Math.abs(delta)>25){
-      didSwipe=true;
-
-      if(delta>0){
-        panel.classList.add("expanded");
-      }else{
-        panel.classList.remove("expanded");
-      }
-    }
-  });
-
-  handle.addEventListener("pointercancel",()=>{
-    didSwipe=false;
-  });
-
-  handle.addEventListener("click",()=>{
-    if(didSwipe){
-      didSwipe=false;
-      return;
+      panel.classList.toggle("expanded",delta>0);
     }
 
+    e.stopPropagation();
+  },{passive:true});
+
+  handle.addEventListener("click",e=>{
+    e.stopPropagation();
     panel.classList.toggle("expanded");
   });
 }
