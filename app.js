@@ -429,25 +429,43 @@ async function deleteMessageForEveryone(message) {
    function setupStatusViewerSwipe(){
   const panel=$("statusViewerViews");
   const handle=$("statusViewerHandle");
+
   if(panel.dataset.swipeReady)return;
   panel.dataset.swipeReady="true";
 
   let startY=0;
+  let didSwipe=false;
 
-  handle.addEventListener("touchstart",e=>{
-    startY=e.touches[0].clientY;
-  },{passive:true});
+  handle.style.touchAction="none";
 
-  handle.addEventListener("touchmove",e=>{
-    e.stopPropagation();
-  },{passive:true});
+  handle.addEventListener("pointerdown",e=>{
+    startY=e.clientY;
+    didSwipe=false;
+    handle.setPointerCapture(e.pointerId);
+  });
 
-  handle.addEventListener("touchend",e=>{
-    e.stopPropagation();
-    const delta=startY-e.changedTouches[0].clientY;
-    if(delta>30)panel.classList.add("expanded");
-    if(delta< -30)panel.classList.remove("expanded");
-  },{passive:true});
+  handle.addEventListener("pointerup",e=>{
+    const delta=startY-e.clientY;
+
+    if(Math.abs(delta)>25){
+      didSwipe=true;
+
+      if(delta>0){
+        panel.classList.add("expanded");
+      }else{
+        panel.classList.remove("expanded");
+      }
+    }
+  });
+
+  handle.addEventListener("click",()=>{
+    if(didSwipe){
+      didSwipe=false;
+      return;
+    }
+
+    panel.classList.toggle("expanded");
+  });
 }
    async function loadStatusViewers(item){
   const panel=$("statusViewerViews");
