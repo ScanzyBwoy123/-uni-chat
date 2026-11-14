@@ -309,14 +309,15 @@
 .person-card-avatar,
 .chat-avatar,
 .my-status-avatar img,
-.status-ring img,
-#myProfileAvatar,
-#partnerAvatar {
-  width: 100%;
-  height: 100%;
+.status-ring img {
   aspect-ratio: 1 / 1;
   object-fit: cover;
   object-position: center;
-  border-radius: 50%;
+  display: block;
+}
+
+.my-status-avatar,
+.status-ring,
+.chat-avatar-wrap {
   overflow: hidden;
 }
